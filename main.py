@@ -9,7 +9,6 @@ from athlete_app.api.routes import device
 from athlete_app.api.routes import session
 from coach_app.api.routes import dashboard, athletes, alerts, profile as coach_profile, settings, auth as coach_auth
 from coach_app.api.routes import sessions
-from athlete_app.api.routes import auth
 
 
 # Init app
