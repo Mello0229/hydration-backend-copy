@@ -8,6 +8,7 @@ from athlete_app.api.deps import get_current_user
 from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
+from athlete_app.models.schemas import RawSensorInput, SensorData
 
 router = APIRouter()
 
@@ -125,44 +126,46 @@ async def receive_raw_sensor_data(payload: list[dict], user=Depends(get_current_
         "combined_metrics": structured["combined_metrics"]
     }
 
+from athlete_app.models.schemas import SensorData  # already imported
+
 @router.post("/receive-raw-stream")
 async def receive_raw_stream(payload: list[dict], user=Depends(get_current_user)):
-    parsed = []
+    valid_batch = []
+    failed_rows = []
 
     for row in payload:
         try:
-            structured = extract_features_from_row(row)
-            prediction, combined = predict_hydration(structured)
-            hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
-
-            await db.sensor_data.insert_one({
-                "user": user["username"],
-                **structured,
-                "combined_metrics": combined,
-                "timestamp": datetime.utcnow()
-            })
-
-            await db.predictions.insert_one({
-                "user": user["username"],
-                "hydration_status": hydration_label,
-                "timestamp": datetime.utcnow()
-            })
-
-            parsed.append({
-                "raw": row,
-                "hydration": hydration_label
-            })
-
+            features = extract_features_from_row(row)
+            valid_batch.append(SensorData(**features))
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print("↪️ Failing Row:", row)
+            failed_rows.append({
+                "error": str(e),
+                "raw": row
+            })
+
+    if not valid_batch:
+        return {
+            "status": "error",
+            "message": "All rows failed preprocessing",
+            "errors": failed_rows
+        }
+
+    result = await receive_data(valid_batch, user=user)
 
     return {
-        "status": "success",
-        "count": len(parsed),
-        "parsed": parsed
+        "status": "partial" if failed_rows else "success",
+        "successful_predictions": result,
+        "failed_rows": failed_rows,
+        "processed_count": len(valid_batch),
+        "total_input": len(payload)
     }
+
+
+@router.post("/raw-schema")
+async def receive_raw_schema(data: RawSensorInput, user=Depends(get_current_user)):
+    features = extract_features_from_row(data.dict())
+    sensor_data = SensorData(**features)
+    return await receive_data([sensor_data], user=user)
 
 @router.get("/status/latest")
 async def get_latest_status(user=Depends(get_current_user)):
