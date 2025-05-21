@@ -9,11 +9,12 @@ from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
 from athlete_app.models.schemas import RawSensorInput, SensorData
+from athlete_app.api.deps import require_athlete
 
 router = APIRouter()
 
 @router.post("/receive")
-async def receive_data(data: List[SensorData], user=Depends(get_current_user)):
+async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
     results = []
 
     for entry in data:
@@ -68,7 +69,7 @@ async def receive_data(data: List[SensorData], user=Depends(get_current_user)):
     }
 
 @router.post("/raw")
-async def receive_raw_sensor_data(payload: list[dict], user=Depends(get_current_user)):
+async def receive_raw_sensor_data(payload: list[dict], user=Depends(require_athlete)):
     sensor_map = {item['sensor_type']: item for item in payload}
     try:
         heart_rate = float(sensor_map['MAX30102']['value'])
@@ -129,7 +130,7 @@ async def receive_raw_sensor_data(payload: list[dict], user=Depends(get_current_
 from athlete_app.models.schemas import SensorData  # already imported
 
 @router.post("/receive-raw-stream")
-async def receive_raw_stream(payload: list[dict], user=Depends(get_current_user)):
+async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete)):
     valid_batch = []
     failed_rows = []
 
@@ -162,13 +163,13 @@ async def receive_raw_stream(payload: list[dict], user=Depends(get_current_user)
 
 
 @router.post("/raw-schema")
-async def receive_raw_schema(data: RawSensorInput, user=Depends(get_current_user)):
+async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
     features = extract_features_from_row(data.dict())
     sensor_data = SensorData(**features)
     return await receive_data([sensor_data], user=user)
 
-@router.get("/status/latest")
-async def get_latest_status(user=Depends(get_current_user)):
+@router.post("/raw-schema")
+async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
     record = await db.predictions.find_one(
         {"user": user["username"]}, sort=[("timestamp", -1)]
     )
@@ -176,8 +177,8 @@ async def get_latest_status(user=Depends(get_current_user)):
         record["_id"] = str(record["_id"])
     return record or {"hydration_status": "Unknown"}
 
-@router.get("/logs")
-async def get_logs(user=Depends(get_current_user)):
+@router.get("/warnings")
+async def get_warnings(sensor: str = Query(None), user=Depends(require_athlete)):
     cursor = db.predictions.find({"user": user["username"]}).sort("timestamp", -1)
     logs = []
     async for doc in cursor:
