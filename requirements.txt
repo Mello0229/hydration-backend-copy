@@ -9,6 +9,7 @@ motor
 
 # 🔐 Auth
 python-jose[cryptography]
+bcrypt
 
 # 📦 Data Handling
 pydantic
