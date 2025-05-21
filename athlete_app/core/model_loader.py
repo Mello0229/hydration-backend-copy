@@ -1,18 +1,14 @@
-# athlete_app/core/model_loader.py
-
 import os
-import joblib
+import pickle
 import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 
-# Load paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.normpath(os.path.join(BASE_DIR, '..', 'model', 'hydration_model.joblib'))
-SCALER_PATH = os.path.normpath(os.path.join(BASE_DIR, '..', 'model', 'hydration_scaler.joblib'))
+MODEL_PATH = os.path.normpath(os.path.join(BASE_DIR, '..', 'model', 'hydration_model.pkl'))
+SCALER_PATH = os.path.normpath(os.path.join(BASE_DIR, '..', 'model', 'hydration_scaler.pkl'))
 TRAIN_PATH = os.path.normpath(os.path.join(BASE_DIR, '..', 'model', 'train_ecg_sigmoid.csv'))
 
-# Feature order used in both training and prediction
 FEATURE_ORDER = [
     "heart_rate",
     "body_temperature",
@@ -30,7 +26,8 @@ def get_model():
     if _model is None:
         if not os.path.exists(MODEL_PATH):
             raise FileNotFoundError(f"Model file not found at {MODEL_PATH}")
-        _model = joblib.load(MODEL_PATH)
+        with open(MODEL_PATH, "rb") as f:
+            _model = pickle.load(f)
     return _model
 
 def get_scaler():
@@ -38,7 +35,8 @@ def get_scaler():
     if _scaler is None:
         if not os.path.exists(SCALER_PATH):
             raise FileNotFoundError(f"Scaler file not found at {SCALER_PATH}")
-        _scaler = joblib.load(SCALER_PATH)
+        with open(SCALER_PATH, "rb") as f:
+            _scaler = pickle.load(f)
     return _scaler
 
 def get_train_df():

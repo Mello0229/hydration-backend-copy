@@ -1,14 +1,14 @@
-# check/model.py
-import joblib
+import pickle
 from pathlib import Path
 import sys
 import traceback
 
-model_path = Path("athlete_app/model/hydration_model.joblib")
-scaler_path = Path("athlete_app/model/hydration_scaler.joblib")
+model_path = Path("athlete_app/model/hydration_model.pkl")
+scaler_path = Path("athlete_app/model/hydration_scaler.pkl")
 
 try:
-    model = joblib.load(model_path)
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
     print("✅ Model loaded successfully.")
     print(f"📦 Type: {type(model)}")
     print(f"🎯 Estimator: {model.__class__.__name__}")
@@ -18,7 +18,8 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    joblib.load(scaler_path)
+    with open(scaler_path, "rb") as f:
+        scaler = pickle.load(f)
     print("✅ Scaler loaded successfully.")
 except Exception as e:
     print(f"❌ Failed to load scaler at {scaler_path}: {e}")
