@@ -44,7 +44,7 @@ def extract_features_from_row(row: Dict) -> Dict:
             "heart_rate": bpm,
             "body_temperature": temp,
             "skin_conductance": gsr,
-            "ecg_sigmoid": sigmoid(ecg),
+            "ECG_sigmoid": sigmoid(ecg),
         }
     except Exception as e:
         raise ValueError(f"Invalid sensor data: {e}")
