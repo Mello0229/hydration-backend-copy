@@ -1,21 +1,22 @@
-# ⚙️ Web Framework & API
+#Web Framework & API
 fastapi
 uvicorn[standard]
 python-dotenv
 python-multipart
 
-# 🛠️ Database
+#Database
 motor
 
-# 🔐 Auth
+#Auth
 python-jose[cryptography]
-bcrypt
+passlib[bcrypt]
 
-# 📦 Data Handling
+
+#Data Handling
 pydantic
 pandas
 
-# 🤖 Machine Learning (Stable + Docker-compatible)
+#Machine Learning (Stable + Docker-compatible)
 joblib==1.3.2
 numpy==1.26.4
 scikit-learn==1.4.2
