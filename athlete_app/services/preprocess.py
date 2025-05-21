@@ -3,6 +3,12 @@
 from typing import Dict
 import math
 
+HYDRATION_LABELS = [
+    "Hydrated",
+    "Slightly Dehydrated",
+    "Dehydrated"
+]
+
 SENSOR_LIMITS = {
     "bpm": (30, 250),
     "gy906": (30.0, 42.0),
@@ -15,7 +21,7 @@ def sigmoid(x: float, k: float = 0.005, center: float = 2040.0) -> float:
 
 def validate_sensor_value(name: str, value: float) -> bool:
     if name not in SENSOR_LIMITS:
-        return True  # Unknown sensor, assume valid
+        return True
     min_val, max_val = SENSOR_LIMITS[name]
     return min_val <= value <= max_val
 

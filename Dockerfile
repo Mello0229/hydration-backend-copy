@@ -16,7 +16,6 @@ COPY . .
 # Upgrade pip and install correct ML packages
 RUN pip install --upgrade pip
 RUN pip install \
-    joblib==1.3.2 \
     scikit-learn==1.4.2 \
     numpy==1.26.4 \
     -r requirements.txt
