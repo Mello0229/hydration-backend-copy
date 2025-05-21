@@ -1,6 +1,7 @@
 # athlete-app/models/schemas.py
 from pydantic import BaseModel
 from typing import Optional, Literal
+from pydantic import BaseModel
 
 class SensorData(BaseModel):
     heart_rate: float
@@ -26,3 +27,6 @@ class UserProfile(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str
+
+class AthleteJoinCoachSchema(BaseModel):
+    coach_name: str

@@ -7,3 +7,10 @@ DB_NAME = os.getenv("DB_NAME", "hydration_db")
 
 client = AsyncIOMotorClient(MONGO_URI)
 db = client[DB_NAME]
+
+async def coach_exists(full_name: str) -> bool:
+    coach = await db["users"].find_one({
+        "full_name": full_name.strip(),
+        "role": "coach"
+    })
+    return coach is not None
