@@ -47,3 +47,10 @@ class RawSensorInput(BaseModel):
                 "ad8232": 2048
             }
         }
+class AthleteProfile(BaseModel):
+    full_name: str
+    dob: str  # format: mm/dd/yyyy or ISO
+    weight: float
+    gender: Literal["male", "female", "other"]
+    sport: str
+    coach_name: Optional[str]

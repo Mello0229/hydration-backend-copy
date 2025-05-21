@@ -21,9 +21,10 @@ class Alert(BaseModel):
     timestamp: datetime
 
 class CoachProfile(BaseModel):
-    name: str
-    contact_number: str
-    sport_manage: str
+    full_name: str
+    sport: str
+    email: str
+    contact: str
 
 class NotificationSettings(BaseModel):
     hydration_alerts: bool = True
