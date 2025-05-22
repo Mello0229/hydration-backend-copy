@@ -1,20 +1,19 @@
 # athlete-app/api/routes/data.py
-from fastapi import APIRouter, Depends, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime
 from fastapi.responses import JSONResponse
 from typing import List
-from athlete_app.models.schemas import SensorData
-from athlete_app.api.deps import get_current_user
+import pandas as pd
+
+from athlete_app.models.schemas import SensorData, RawSensorInput
+from athlete_app.api.deps import get_current_user, require_athlete
 from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
-from athlete_app.models.schemas import RawSensorInput
-from athlete_app.api.deps import require_athlete
-import pandas as pd
 from athlete_app.core.model_loader import get_model, get_scaler
 
-
 router = APIRouter()
+
 
 @router.post("/receive")
 async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
@@ -46,18 +45,7 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
         prediction, combined = predict_hydration(input_data)
         hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
 
-        await db.sensor_data.insert_one({
-            "user": user["username"],
-            **input_data,
-            "combined_metrics": combined,
-            "timestamp": datetime.utcnow()
-        })
-
-        await db.predictions.insert_one({
-            "user": user["username"],
-            "hydration_status": hydration_label,
-            "timestamp": datetime.utcnow()
-        })
+        await save_prediction(input_data, user, hydration_label, combined)
 
         results.append({
             "raw_sensor_data": input_data,
@@ -71,6 +59,7 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
         "all_predictions": results
     }
 
+
 @router.post("/receive-raw-stream")
 async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete)):
     valid_batch = []
@@ -82,10 +71,7 @@ async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete))
             sensor_data = SensorData(**features)
             valid_batch.append(sensor_data)
         except Exception as e:
-            failed_rows.append({
-                "error": str(e),
-                "raw": row
-            })
+            failed_rows.append({"error": str(e), "raw": row})
 
     if not valid_batch:
         return {
@@ -94,7 +80,6 @@ async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete))
             "errors": failed_rows
         }
 
-    # Prediction
     input_df = pd.DataFrame([d.dict() for d in valid_batch])
     scaled_input = get_scaler().transform(input_df)
     predictions = get_model().predict(scaled_input)
@@ -105,17 +90,7 @@ async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete))
         hydration_label = HYDRATION_LABELS.get(label, "Unknown")
         combined = input_data["combined_metrics"]
 
-        await db.sensor_data.insert_one({
-            "user": user["username"],
-            **input_data,
-            "timestamp": datetime.utcnow()
-        })
-
-        await db.predictions.insert_one({
-            "user": user["username"],
-            "hydration_status": hydration_label,
-            "timestamp": datetime.utcnow()
-        })
+        await save_prediction(input_data, user, hydration_label, combined)
 
         results.append({
             "raw_sensor_data": input_data,
@@ -129,26 +104,35 @@ async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete))
         "errors": failed_rows
     }
 
+
 @router.post("/raw-schema")
 async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
-    record = await db.predictions.find_one(
-        {"user": user["username"]}, sort=[("timestamp", -1)]
-    )
+    record = await db.predictions.find_one({"user": user["username"]}, sort=[("timestamp", -1)])
     if record and "_id" in record:
         record["_id"] = str(record["_id"])
     return record or {"hydration_status": "Unknown"}
 
-@router.get("/latest")
-async def get_latest_sensor(user=Depends(require_athlete)):
-    sensor = await db.sensor_data.find_one(
-        {"user": user["username"]}, sort=[("timestamp", -1)]
-    )
-    if sensor and "_id" in sensor:
-        sensor["_id"] = str(sensor["_id"])
-    return sensor or {}
+
+@router.get("/hydration/status")
+async def get_latest_hydration(user=Depends(require_athlete)):
+    prediction = await db.predictions.find_one({"user": user["username"]}, sort=[("timestamp", -1)])
+    vitals = await db.sensor_data.find_one({"user": user["username"]}, sort=[("timestamp", -1)])
+
+    if not prediction or not vitals:
+        raise HTTPException(status_code=404, detail="No hydration data found")
+
+    return {
+        "hydration_status": prediction["hydration_status"],
+        "heart_rate": vitals["heart_rate"],
+        "body_temperature": vitals["body_temperature"],
+        "skin_conductance": vitals["skin_conductance"],
+        "ecg_sigmoid": vitals["ecg_sigmoid"],
+        "timestamp": vitals["timestamp"]
+    }
+
 
 @router.get("/warnings/prediction")
-async def get_warnings(sensor: str = Query(None), user=Depends(require_athlete)):
+async def get_prediction_warnings(sensor: str = Query(None), user=Depends(require_athlete)):
     cursor = db.predictions.find({"user": user["username"]}).sort("timestamp", -1)
     logs = []
     async for doc in cursor:
@@ -156,8 +140,9 @@ async def get_warnings(sensor: str = Query(None), user=Depends(require_athlete))
         logs.append(doc)
     return logs
 
+
 @router.get("/warnings/sensor")
-async def get_warnings(sensor: str = Query(None), user=Depends(get_current_user)):
+async def get_sensor_warnings(sensor: str = Query(None), user=Depends(get_current_user)):
     query = {"user": user["username"]}
     if sensor:
         query["missing_field"] = sensor
@@ -169,10 +154,36 @@ async def get_warnings(sensor: str = Query(None), user=Depends(get_current_user)
         warnings.append(doc)
     return warnings
 
+
 @router.get("/time")
 async def get_server_time():
     return {"timestamp": int(datetime.utcnow().timestamp())}
 
+
 @router.get("/ping")
 async def ping():
     return {"status": "alive"}
+
+
+@router.get("/alerts")
+async def get_athlete_alerts(user=Depends(require_athlete)):
+    alerts = db.alerts.find({"athlete_id": user["username"]})
+    return [doc async for doc in alerts]
+
+
+async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
+    """
+    Saves sensor data and prediction to the database.
+    Used by both single and batch ingestion.
+    """
+    await db.sensor_data.insert_one({
+        "user": user["username"],
+        **input_data,
+        "combined_metrics": combined,
+        "timestamp": datetime.utcnow()
+    })
+    await db.predictions.insert_one({
+        "user": user["username"],
+        "hydration_status": label,
+        "timestamp": datetime.utcnow()
+    })

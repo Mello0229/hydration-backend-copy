@@ -1,78 +1,60 @@
-# Smart Hydration Backend API
+# 💧 Smart Hydration Backend API
 
-This backend powers both the athlete and coach apps for hydration monitoring using FastAPI.
+This backend powers the athlete and coach apps for hydration monitoring, real-time device integration, and session tracking using **FastAPI** and **MongoDB**.
 
 ---
 
-## 🔗 Live API URL (Railway)
+## 🔗 Live API (Hosted via Railway)
 
-Replace with your actual Railway domain:
-
-```
 https://hydration-backend.up.railway.app
-```
 
-## 📦 Project Structure (Unified)
+---
+
+## 📦 Project Structure
 
 ```bash
 backend/
-├── __init__.py
-├── main.py                 # Unified entrypoint for FastAPI
+├── main.py                  # FastAPI entrypoint (unified)
 ├── athlete_app/
-│   ├── __init__.py
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes/
-│   │       ├── __init__.py
-│   │       ├── auth.py
-│   │       ├── profile.py
-│   │       ├── data.py
-│   │       ├── user.py
-│   │       └── session.py
+│   ├── api/routes/
+│   │   ├── auth.py
+│   │   ├── profile.py
+│   │   ├── data.py
+│   │   ├── user.py
+│   │   ├── session.py
+│   │   ├── settings.py
+│   │   └── device.py
 │   ├── core/
-│   │   ├── __init__.py
 │   │   ├── config.py
 │   │   ├── model_loader.py
 │   │   └── security.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py
+│   ├── models/schemas.py
 │   ├── services/
-│   │   ├── __init__.py
-│   │   └── predictor.py
+│   │   ├── predictor.py
+│   │   └── preprocess.py
 │   └── model/
-│       ├── hydration_model_balanced.joblib
-│       ├── hydration_scaler_balanced.joblib
+│       ├── hydration_model.pkl
+│       ├── hydration_scaler.pkl
 │       └── train_ecg_sigmoid.csv
 ├── coach_app/
-│   ├── __init__.py
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes/
-│   │       ├── __init__.py
-│   │       ├── dashboard.py
-│   │       ├── athletes.py
-│   │       ├── alerts.py
-│   │       ├── profile.py
-│   │       ├── settings.py
-│   │       └── auth.py
-│   ├── core/
-│   │   ├── __init__.py
-│   │   └── config.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py
-│   └── services/
-│       ├── __init__.py
-│       └── utils.py
+│   ├── api/routes/
+│   │   ├── auth.py
+│   │   ├── dashboard.py
+│   │   ├── profile.py
+│   │   ├── alerts.py
+│   │   ├── athletes.py
+│   │   ├── sessions.py
+│   │   ├── settings.py
+│   │   └── account.py
+│   ├── models/schemas.py
+│   └── services/utils.py
 ├── shared/
-│   ├── __init__.py
-│   └── database.py
+│   ├── database.py
+│   └── security.py
 ├── check/model.py
-├── .env.example
 ├── requirements.txt
 ├── Dockerfile
-└── README.md
+└── .env.example
 ```
 
 ---
@@ -80,17 +62,12 @@ backend/
 ## 🚀 How to Run Locally
 
 ```bash
-# 1. Clone the repo
+git clone https://github.com/your-username/smart-hydration-backend
 cd backend
 
-# 2. Copy environment variables
 cp .env.example .env
-
-# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Run the unified FastAPI app
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload
 ```
 
 Swagger Docs: http://localhost:8000/docs
@@ -110,11 +87,16 @@ Swagger Docs: http://localhost:8000/docs
 
 ### 🧍 Athlete
 
-| Method | Path                | Description              |
-| ------ | ------------------- | ------------------------ |
-| POST   | /data/receive       | Submit sensor data       |
-| GET    | /data/status/latest | Latest hydration state   |
-| GET    | /data/logs          | Hydration prediction log |
+| Method | Path                      | Description                  |
+| ------ | ------------------------- | ---------------------------- |
+| POST   | /data/receive             | Submit sensor data           |
+| POST   | /data/receive-raw-stream  | Submit batch raw sensor data |
+| GET    | /data/hydration/status    | Get latest hydration status  |
+| GET    | /data/warnings/prediction | Prediction log               |
+| GET    | /data/warnings/sensor     | Sensor warnings              |
+| GET    | /data/alerts              | Get sensor warnings/alerts   |
+| GET    | /data/time                | Get server time              |
+| GET    | /data/ping                | Health check endpoint        |
 
 ### ⏱ Athlete Sessions
 
@@ -124,14 +106,25 @@ Swagger Docs: http://localhost:8000/docs
 | POST   | /session/end   | End training session   |
 | GET    | /session/logs  | Get athlete sessions   |
 
-### 👤 Athlete Profile
+### 👤 Athlete Profile & Settings
 
-| Method | Path              | Description         |
-| ------ | ----------------- | ------------------- |
-| GET    | /user/profile     | Get athlete profile |
-| POST   | /user/profile     | Update profile      |
-| POST   | /account/password | Change password     |
-| DELETE | /account/delete   | Delete account      |
+| Method | Path                    | Description               |
+| ------ | ----------------------- | ------------------------- |
+| GET    | /user/profile           | Get profile               |
+| POST   | /user/profile           | Update profile            |
+| POST   | /account/password       | Change password           |
+| DELETE | /account/delete         | Delete account            |
+| GET    | /settings/units         | Get preferred units       |
+| PUT    | /settings/units         | Update units              |
+| GET    | /settings/notifications | Get notification settings |
+| PUT    | /settings/notifications | Update notifications      |
+
+### 📡 Device
+
+| Method | Path                   | Description            |
+| ------ | ---------------------- | ---------------------- |
+| GET    | /device/pairing-status | Check device pairing   |
+| GET    | /device/status         | Get device health info |
 
 ### 🧑‍🏫 Coach Dashboard
 
@@ -144,11 +137,12 @@ Swagger Docs: http://localhost:8000/docs
 
 ### 🚨 Alerts
 
-| Method | Path         | Description       |
-| ------ | ------------ | ----------------- |
-| GET    | /alerts/     | Get all alerts    |
-| GET    | /alerts/{id} | Alerts by athlete |
-| POST   | /alerts/     | Create new alert  |
+| Method | Path                 | Description           |
+| ------ | -------------------- | --------------------- |
+| GET    | /alerts/             | Get all alerts        |
+| GET    | /alerts/{id}         | Get alerts by athlete |
+| POST   | /alerts/             | Create new alert      |
+| POST   | /alerts/resolve/{id} | Resolve alert         |
 
 ### ⚙️ Coach Settings
 
