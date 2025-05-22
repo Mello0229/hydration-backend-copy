@@ -12,6 +12,7 @@ from athlete_app.api.routes import device
 from athlete_app.api.routes import session
 from coach_app.api.routes import dashboard, athletes, alerts, profile as coach_profile, settings, auth as coach_auth
 from coach_app.api.routes import sessions
+from coach_app.api.routes import account as coach_account
 
 # Init app
 app = FastAPI(
@@ -46,6 +47,7 @@ app.include_router(alerts.router, prefix="/alerts", tags=["Coach Alerts"])
 app.include_router(coach_profile.router, prefix="/profile", tags=["Coach Profile"])
 app.include_router(settings.router, prefix="/settings", tags=["Coach Settings"])
 app.include_router(sessions.router, prefix="/coach", tags=["Coach Sessions"])
+app.include_router(coach_account.router, prefix="/coach/account", tags=["Coach Account"])
 
 # Global exception logger
 @app.middleware("http")

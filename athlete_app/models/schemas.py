@@ -1,8 +1,7 @@
 # athlete-app/models/schemas.py
 from pydantic import BaseModel
-from typing import Optional, Literal
-from pydantic import BaseModel
-from typing import Dict
+from pydantic.config import ConfigDict
+from typing import Optional, Literal, Dict
 
 class SensorData(BaseModel):
     heart_rate: float
@@ -38,15 +37,17 @@ class RawSensorInput(BaseModel):
     groveGsr: float             # skin conductance
     ad8232: int                 # raw ECG value
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
-                "max30105": { "bpm": 72 },
+                "max30105": {"bpm": 72},
                 "gy906": 36.5,
                 "groveGsr": 1200,
                 "ad8232": 2048
             }
         }
+    )
+
 class AthleteProfile(BaseModel):
     full_name: str
     dob: str  # format: mm/dd/yyyy or ISO

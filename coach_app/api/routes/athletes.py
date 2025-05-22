@@ -1,4 +1,3 @@
-# coach-app/api/routes/athletes.py
 from fastapi import APIRouter, HTTPException, Depends
 from coach_app.models.schemas import Athlete
 from coach_app.api.deps import get_current_coach
@@ -8,7 +7,8 @@ router = APIRouter()
 
 @router.get("/", response_model=list[Athlete])
 async def get_athletes(coach=Depends(get_current_coach)):
-    return [doc async for doc in db.athletes.find()]
+    # ✅ Only return athletes added by this coach
+    return [doc async for doc in db.athletes.find({"assigned_by": coach["email"]})]
 
 @router.get("/{athlete_id}", response_model=Athlete)
 async def get_athlete(athlete_id: str, coach=Depends(get_current_coach)):
@@ -19,7 +19,9 @@ async def get_athlete(athlete_id: str, coach=Depends(get_current_coach)):
 
 @router.post("/add")
 async def add_athlete(data: Athlete, coach=Depends(get_current_coach)):
-    await db.athletes.insert_one(data.dict())
+    athlete = data.dict()
+    athlete["assigned_by"] = coach["email"]  # ✅ Track which coach added the athlete
+    await db.athletes.insert_one(athlete)
     return {"message": "Athlete added"}
 
 @router.delete("/remove/{athlete_id}")

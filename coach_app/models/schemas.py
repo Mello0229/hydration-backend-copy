@@ -19,6 +19,7 @@ class Alert(BaseModel):
     alert_type: str
     description: str
     timestamp: datetime
+    status: Optional[str] = "active"  # ✅ new field
 
 class CoachProfile(BaseModel):
     full_name: str
