@@ -5,12 +5,13 @@ from athlete_app.api.deps import get_current_user
 from athlete_app.core.config import db
 from athlete_app.models.schemas import AthleteJoinCoachSchema
 from shared.database import db
+from shared.security import verify_password
 
 router = APIRouter()
 
 @router.post("/password")
 async def change_password(data: PasswordChange, user=Depends(get_current_user)):
-    if user["password"] != data.current_password:
+    if not verify_password(data.current_password, user["password"]):
         raise HTTPException(status_code=403, detail="Incorrect current password")
     await db.users.update_one({"username": user["username"]}, {"$set": {"password": data.new_password}})
     return {"message": "Password changed"}

@@ -1,7 +1,10 @@
 #backend/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
+import traceback
 
 # Import routers
 from athlete_app.api.routes import auth, profile as athlete_profile, data, user
@@ -9,7 +12,6 @@ from athlete_app.api.routes import device
 from athlete_app.api.routes import session
 from coach_app.api.routes import dashboard, athletes, alerts, profile as coach_profile, settings, auth as coach_auth
 from coach_app.api.routes import sessions
-
 
 # Init app
 app = FastAPI(
@@ -45,3 +47,14 @@ app.include_router(coach_profile.router, prefix="/profile", tags=["Coach Profile
 app.include_router(settings.router, prefix="/settings", tags=["Coach Settings"])
 app.include_router(sessions.router, prefix="/coach", tags=["Coach Sessions"])
 
+# Global exception logger
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        print("🚨 Error:", traceback.format_exc())
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(exc)}
+        )

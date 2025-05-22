@@ -8,8 +8,11 @@ from athlete_app.api.deps import get_current_user
 from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
-from athlete_app.models.schemas import RawSensorInput, SensorData
+from athlete_app.models.schemas import RawSensorInput
 from athlete_app.api.deps import require_athlete
+import pandas as pd
+from athlete_app.core.model_loader import get_model, get_scaler
+
 
 router = APIRouter()
 
@@ -68,67 +71,6 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
         "all_predictions": results
     }
 
-@router.post("/raw")
-async def receive_raw_sensor_data(payload: list[dict], user=Depends(require_athlete)):
-    sensor_map = {item['sensor_type']: item for item in payload}
-    try:
-        heart_rate = float(sensor_map['MAX30102']['value'])
-        body_temperature = float(sensor_map['MLX90614']['value'])
-        skin_conductance = float(sensor_map['GSR']['value'])
-        ecg_raw = int(sensor_map['ECG']['value'])
-    except KeyError as e:
-        await db.sensor_warnings.insert_one({
-            "user": user["username"],
-            "missing_field": str(e),
-            "received_data": payload,
-            "timestamp": datetime.utcnow()
-        })
-        await db.alerts.insert_one({
-            "athlete_id": user["username"],
-            "alert_type": "SensorWarning",
-            "description": f"Missing sensor: {e}",
-            "timestamp": datetime.utcnow()
-        })
-        return JSONResponse(status_code=400, content={"error": f"Missing sensor: {e}"})
-
-    def sigmoid(ecg_raw, k=0.005, center=2040):
-        return 1 / (1 + pow(2.71828, -k * (ecg_raw - center)))
-
-    ecg_sigmoid = sigmoid(ecg_raw)
-
-    structured = {
-        "heart_rate": heart_rate,
-        "body_temperature": body_temperature,
-        "skin_conductance": skin_conductance,
-        "ecg_sigmoid": ecg_sigmoid
-    }
-
-    structured["combined_metrics"] = (
-        heart_rate + body_temperature + skin_conductance + ecg_sigmoid
-    ) / 4
-
-    prediction, _ = predict_hydration(structured)
-    hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
-
-    await db.sensor_data.insert_one({
-        "user": user["username"],
-        **structured,
-        "timestamp": datetime.utcnow()
-    })
-
-    await db.predictions.insert_one({
-        "user": user["username"],
-        "hydration_status": hydration_label,
-        "timestamp": datetime.utcnow()
-    })
-
-    return {
-        "prediction": hydration_label,
-        "combined_metrics": structured["combined_metrics"]
-    }
-
-from athlete_app.models.schemas import SensorData  # already imported
-
 @router.post("/receive-raw-stream")
 async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete)):
     valid_batch = []
@@ -137,7 +79,8 @@ async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete))
     for row in payload:
         try:
             features = extract_features_from_row(row)
-            valid_batch.append(SensorData(**features))
+            sensor_data = SensorData(**features)
+            valid_batch.append(sensor_data)
         except Exception as e:
             failed_rows.append({
                 "error": str(e),
@@ -151,22 +94,40 @@ async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete))
             "errors": failed_rows
         }
 
-    result = await receive_data(valid_batch, user=user)
+    # Prediction
+    input_df = pd.DataFrame([d.dict() for d in valid_batch])
+    scaled_input = get_scaler().transform(input_df)
+    predictions = get_model().predict(scaled_input)
+
+    results = []
+    for row, label in zip(valid_batch, predictions):
+        input_data = row.dict()
+        hydration_label = HYDRATION_LABELS.get(label, "Unknown")
+        combined = input_data["combined_metrics"]
+
+        await db.sensor_data.insert_one({
+            "user": user["username"],
+            **input_data,
+            "timestamp": datetime.utcnow()
+        })
+
+        await db.predictions.insert_one({
+            "user": user["username"],
+            "hydration_status": hydration_label,
+            "timestamp": datetime.utcnow()
+        })
+
+        results.append({
+            "raw_sensor_data": input_data,
+            "hydration_state_prediction": hydration_label,
+            "processed_combined_metrics": combined
+        })
 
     return {
         "status": "partial" if failed_rows else "success",
-        "successful_predictions": result,
-        "failed_rows": failed_rows,
-        "processed_count": len(valid_batch),
-        "total_input": len(payload)
+        "results": results,
+        "errors": failed_rows
     }
-
-
-@router.post("/raw-schema")
-async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
-    features = extract_features_from_row(data.dict())
-    sensor_data = SensorData(**features)
-    return await receive_data([sensor_data], user=user)
 
 @router.post("/raw-schema")
 async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
@@ -177,7 +138,16 @@ async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)
         record["_id"] = str(record["_id"])
     return record or {"hydration_status": "Unknown"}
 
-@router.get("/warnings")
+@router.get("/latest")
+async def get_latest_sensor(user=Depends(require_athlete)):
+    sensor = await db.sensor_data.find_one(
+        {"user": user["username"]}, sort=[("timestamp", -1)]
+    )
+    if sensor and "_id" in sensor:
+        sensor["_id"] = str(sensor["_id"])
+    return sensor or {}
+
+@router.get("/warnings/prediction")
 async def get_warnings(sensor: str = Query(None), user=Depends(require_athlete)):
     cursor = db.predictions.find({"user": user["username"]}).sort("timestamp", -1)
     logs = []
@@ -186,7 +156,7 @@ async def get_warnings(sensor: str = Query(None), user=Depends(require_athlete))
         logs.append(doc)
     return logs
 
-@router.get("/warnings")
+@router.get("/warnings/sensor")
 async def get_warnings(sensor: str = Query(None), user=Depends(get_current_user)):
     query = {"user": user["username"]}
     if sensor:
