@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 import traceback
 
@@ -24,6 +23,17 @@ app = FastAPI(
     description="Unified API for athlete and coach apps"
 )
 
+# Middleware for logging all request headers
+class LogRequestHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        print(f"\n🔍 [HTTP] {request.method} {request.url.path}")
+        for name, value in request.headers.items():
+            print(f"   🧾 {name}: {value}")
+        return await call_next(request)
+
+# Add header logging
+app.add_middleware(LogRequestHeadersMiddleware)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -33,16 +43,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ATHLETE ROUTES
+# Include all routers
 app.include_router(auth.router, prefix="/auth", tags=["Athlete Auth"])
 app.include_router(athlete_profile.router, prefix="/user", tags=["Athlete Profile"])
 app.include_router(data.router, prefix="/data", tags=["Sensor Data"])
 app.include_router(user.router, prefix="/account", tags=["Athlete Account"])
 app.include_router(device.router, prefix="/device", tags=["Device"])
 app.include_router(session.router, prefix="/session", tags=["Sessions"])
-app.include_router(athlete_settings.router, prefix="/settings", tags=["Athlete Settings"])  # ✅ Added
-
-# COACH ROUTES
+app.include_router(athlete_settings.router, prefix="/settings", tags=["Athlete Settings"])
 app.include_router(coach_auth.router, prefix="/coach/auth", tags=["Coach Auth"])
 app.include_router(dashboard.router, prefix="/dashboard", tags=["Coach Dashboard"])
 app.include_router(athletes.router, prefix="/athletes", tags=["Coach Athletes"])
@@ -52,7 +60,7 @@ app.include_router(coach_settings.router, prefix="/settings", tags=["Coach Setti
 app.include_router(sessions.router, prefix="/coach", tags=["Coach Sessions"])
 app.include_router(coach_account.router, prefix="/coach/account", tags=["Coach Account"])
 
-# Global exception logger
+# Error middleware
 @app.middleware("http")
 async def catch_exceptions_middleware(request: Request, call_next):
     try:
