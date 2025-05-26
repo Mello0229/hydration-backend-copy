@@ -11,7 +11,11 @@ async def get_profile(coach=Depends(get_current_coach)):
     profile = await db.coach_profile.find_one({"email": coach["email"]})
     return profile or CoachProfile(full_name="", email=coach["email"], contact="", sport="")
 
-@router.put("/")
-async def update_profile(data: CoachProfile, coach=Depends(get_current_coach)):
-    await db.coach_profile.replace_one({"email": coach["email"]}, data.dict(), upsert=True)
-    return {"message": "Profile updated"}
+@router.post("/", response_model=CoachProfile)
+async def create_or_update_profile(data: CoachProfile, coach=Depends(get_current_coach)):
+    await db.coach_profile.replace_one(
+        {"email": coach["email"]},
+        data.dict(),
+        upsert=True
+    )
+    return data
