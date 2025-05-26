@@ -18,3 +18,13 @@ async def update_profile(data: CoachProfile, coach=Depends(get_current_coach)):
     print(f"[POST /profile] Saving coach profile: {data.dict()}")
     await db.coach_profile.replace_one({"email": coach["email"]}, data.dict(), upsert=True)
     return {"message": "Profile updated"}
+
+@router.post("/")
+async def create_profile(data: CoachProfile, coach=Depends(get_current_coach)):
+    print(f"[POST /profile/] Creating coach profile for: {coach['email']}")
+    await db.coach_profile.replace_one(
+        {"email": coach["email"]},
+        data.dict(),
+        upsert=True
+    )
+    return {"message": "Coach profile created"}
