@@ -8,11 +8,10 @@ router = APIRouter()
 
 @router.get("/", response_model=CoachProfile)
 async def get_profile(coach=Depends(get_current_coach)):
-    profile = await db.coach_profile.find_one()
-    return profile or CoachProfile(name="", contact_number="", sport_manage="")
+    profile = await db.coach_profile.find_one({"email": coach["email"]})
+    return profile or CoachProfile(full_name="", email=coach["email"], contact="", sport="")
 
 @router.put("/")
 async def update_profile(data: CoachProfile, coach=Depends(get_current_coach)):
-    await db.coach_profile.replace_one({}, data.dict(), upsert=True)
+    await db.coach_profile.replace_one({"email": coach["email"]}, data.dict(), upsert=True)
     return {"message": "Profile updated"}
-
