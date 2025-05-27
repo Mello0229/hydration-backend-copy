@@ -30,3 +30,14 @@ async def remove_athlete(athlete_id: str, coach=Depends(get_current_coach)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Athlete not found")
     return {"message": "Athlete removed"}
+
+@router.get("/vitals/{athlete_id}")
+async def get_latest_vitals(athlete_id: str, coach=Depends(get_current_coach)):
+    """
+    Get the latest sensor vitals for a specific athlete.
+    """
+    from shared.database import db
+    latest_data = await db.sensor_data.find_one({"athlete_id": athlete_id}, sort=[("timestamp", -1)])
+    if not latest_data:
+        raise HTTPException(status_code=404, detail="No sensor data found for this athlete")
+    return latest_data
