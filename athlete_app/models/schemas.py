@@ -18,12 +18,13 @@ class User(BaseModel):
     role: Literal['athlete', 'coach']
 
 class UserProfile(BaseModel):
-    full_name: Optional[str]
-    dob: Optional[str]
-    height: Optional[float]
-    weight: Optional[float]
-    sport: Optional[str]
-
+    full_name: str
+    dob: str  # format: mm/dd/yyyy or ISO
+    weight: float
+    gender: Literal["male", "female", "other"]
+    sport: str
+    coach_name: Optional[str]
+    
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str
@@ -47,11 +48,3 @@ class RawSensorInput(BaseModel):
             }
         }
     )
-
-class AthleteProfile(BaseModel):
-    full_name: str
-    dob: str  # format: mm/dd/yyyy or ISO
-    weight: float
-    gender: Literal["male", "female", "other"]
-    sport: str
-    coach_name: Optional[str]
