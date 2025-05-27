@@ -8,19 +8,17 @@ router = APIRouter()
 
 @router.post("/profile")
 async def update_profile(profile: UserProfile, user=Depends(get_current_user)):
-    # If coach is provided, verify existence
-    if profile.coach_name:
-        exists = await db.coach_profile.find_one({"full_name": profile.coach_name})
-        if not exists:
-            raise HTTPException(status_code=400, detail="Coach not found")
+    print(f"[POST /profile] {user['username']} updating profile as {user['role']}")
+    
+    if user["role"] == "athlete":
+        if not profile.coach_name:
+            raise HTTPException(status_code=400, detail="Coach name is required for athletes")
+        coach = await db.coach_profile.find_one({"full_name": profile.coach_name})
+        if not coach:
+            raise HTTPException(status_code=404, detail="Assigned coach does not exist")
 
     await db.users.update_one(
         {"username": user["username"]},
         {"$set": {"profile": profile.dict()}}
     )
-    return {"message": "Athlete profile updated"}
-
-@router.get("/profile")
-async def get_profile(user=Depends(get_current_user)):
-    record = await db.users.find_one({"username": user["username"]})
-    return record.get("profile", {})
+    return {"message": "Profile updated"}
