@@ -1,3 +1,4 @@
+# backend/main.py
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,6 +23,13 @@ app = FastAPI(
     version="1.0.0",
     description="Unified API for athlete and coach apps"
 )
+
+# Middleware to log missing Authorization header
+@app.middleware("http")
+async def log_missing_auth_header(request: Request, call_next):
+    if "authorization" not in request.headers:
+        print("❌ Missing Authorization Header in request to:", request.url.path)
+    return await call_next(request)
 
 # Middleware for logging all request headers
 class LogRequestHeadersMiddleware(BaseHTTPMiddleware):
