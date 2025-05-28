@@ -1,3 +1,5 @@
+# coach_app/api/routes/athletes.py
+
 from fastapi import APIRouter, HTTPException, Depends
 from coach_app.models.schemas import Athlete
 from coach_app.api.deps import get_current_coach
@@ -6,38 +8,15 @@ from shared.database import db
 router = APIRouter()
 
 @router.get("/", response_model=list[Athlete])
-async def get_athletes(coach=Depends(get_current_coach)):
-    # ✅ Only return athletes added by this coach
-    return [doc async for doc in db.athletes.find({"assigned_by": coach["email"]})]
+async def list_athletes(coach=Depends(get_current_coach)):
+    """List all athletes assigned to the authenticated coach."""
+    athletes = db.athletes.find({"assigned_by": coach["email"]})
+    return [athlete async for athlete in athletes]
 
 @router.get("/{athlete_id}", response_model=Athlete)
-async def get_athlete(athlete_id: str, coach=Depends(get_current_coach)):
+async def retrieve_athlete(athlete_id: str, coach=Depends(get_current_coach)):
+    """Get details of a specific athlete by ID."""
     athlete = await db.athletes.find_one({"id": athlete_id})
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     return athlete
-
-@router.post("/add")
-async def add_athlete(data: Athlete, coach=Depends(get_current_coach)):
-    athlete = data.dict()
-    athlete["assigned_by"] = coach["email"]  # ✅ Track which coach added the athlete
-    await db.athletes.insert_one(athlete)
-    return {"message": "Athlete added"}
-
-@router.delete("/remove/{athlete_id}")
-async def remove_athlete(athlete_id: str, coach=Depends(get_current_coach)):
-    result = await db.athletes.delete_one({"id": athlete_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Athlete not found")
-    return {"message": "Athlete removed"}
-
-@router.get("/vitals/{athlete_id}")
-async def get_latest_vitals(athlete_id: str, coach=Depends(get_current_coach)):
-    """
-    Get the latest sensor vitals for a specific athlete.
-    """
-    from shared.database import db
-    latest_data = await db.sensor_data.find_one({"athlete_id": athlete_id}, sort=[("timestamp", -1)])
-    if not latest_data:
-        raise HTTPException(status_code=404, detail="No sensor data found for this athlete")
-    return latest_data
