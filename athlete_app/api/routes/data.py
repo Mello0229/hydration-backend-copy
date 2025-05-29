@@ -58,52 +58,36 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
         "last_prediction": results[-1] if results else None,
         "all_predictions": results
     }
+async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
+    timestamp = datetime.utcnow()
 
+    await db.sensor_data.insert_one({
+        "user": user["username"],
+        **input_data,
+        "combined_metrics": combined,
+        "timestamp": timestamp
+    })
 
-@router.post("/receive-raw-stream")
-async def receive_raw_stream(payload: list[dict], user=Depends(require_athlete)):
-    valid_batch = []
-    failed_rows = []
+    await db.predictions.insert_one({
+        "user": user["username"],
+        "hydration_status": label,
+        "timestamp": timestamp
+    })
 
-    for row in payload:
-        try:
-            features = extract_features_from_row(row)
-            sensor_data = SensorData(**features)
-            valid_batch.append(sensor_data)
-        except Exception as e:
-            failed_rows.append({"error": str(e), "raw": row})
-
-    if not valid_batch:
-        return {
-            "status": "error",
-            "message": "All rows failed preprocessing",
-            "errors": failed_rows
-        }
-
-    input_df = pd.DataFrame([d.dict() for d in valid_batch])
-    scaled_input = get_scaler().transform(input_df)
-    predictions = get_model().predict(scaled_input)
-
-    results = []
-    for row, label in zip(valid_batch, predictions):
-        input_data = row.dict()
-        hydration_label = HYDRATION_LABELS.get(label, "Unknown")
-        combined = input_data["combined_metrics"]
-
-        await save_prediction(input_data, user, hydration_label, combined)
-
-        results.append({
-            "raw_sensor_data": input_data,
-            "hydration_state_prediction": hydration_label,
-            "processed_combined_metrics": combined
-        })
-
-    return {
-        "status": "partial" if failed_rows else "success",
-        "results": results,
-        "errors": failed_rows
-    }
-
+    # ✅ Update inline user.profile.latest_prediction
+    await db.users.update_one(
+        {"username": user["username"]},
+        {"$set": {
+            "profile.latest_prediction": {
+                "hydration_status": label,
+                "heart_rate": input_data["heart_rate"],
+                "body_temperature": input_data["body_temperature"],
+                "skin_conductance": input_data["skin_conductance"],
+                "ecg_sigmoid": input_data["ecg_sigmoid"],
+                "timestamp": timestamp
+            }
+        }}
+    )
 
 @router.post("/raw-schema")
 async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):

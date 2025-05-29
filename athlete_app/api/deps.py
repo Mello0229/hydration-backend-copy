@@ -1,3 +1,4 @@
+# athlete-app/api/deps.py
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from athlete_app.core.security import decode_token
