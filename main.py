@@ -7,11 +7,10 @@ import traceback
 
 # Import routers
 from athlete_app.api.routes import auth, profile as athlete_profile, data, user
-from athlete_app.api.routes import device, session, settings as athlete_settings
+from athlete_app.api.routes import device, session
 from coach_app.api.routes import (
     dashboard, athletes, alerts,
     profile as coach_profile,
-    settings as coach_settings,
     auth as coach_auth,
     sessions,
     account as coach_account
@@ -63,7 +62,6 @@ app.include_router(dashboard.router, prefix="/dashboard", tags=["Coach Dashboard
 app.include_router(athletes.router, prefix="/athletes", tags=["Coach Athletes"])
 app.include_router(alerts.router, prefix="/alerts", tags=["Coach Alerts"])
 app.include_router(coach_profile.router, prefix="/profile", tags=["Coach Profile"])
-app.include_router(coach_settings.router, prefix="/settings", tags=["Coach Settings"])
 app.include_router(sessions.router, prefix="/coach", tags=["Coach Sessions"])
 app.include_router(coach_account.router, prefix="/coach/account", tags=["Coach Account"])
 

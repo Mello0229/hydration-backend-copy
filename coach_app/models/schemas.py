@@ -27,15 +27,6 @@ class CoachProfile(BaseModel):
     email: str
     contact: str
 
-class NotificationSettings(BaseModel):
-    hydration_alerts: bool = True
-    sync_notifications: bool = True
-
-class UnitsSettings(BaseModel):
-    height: str = "CM"
-    weight: str = "KG"
-    temperature: str = "C"
-
 class CoachUser(BaseModel):
     username: str
     password: str
