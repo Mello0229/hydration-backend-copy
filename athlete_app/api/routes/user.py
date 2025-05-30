@@ -2,7 +2,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from athlete_app.models.schemas import PasswordChange
 from athlete_app.api.deps import get_current_user
-from athlete_app.core.config import db
 from athlete_app.models.schemas import AthleteJoinCoachSchema
 from shared.database import db
 from shared.security import verify_password
