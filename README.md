@@ -6,7 +6,7 @@ A FastAPI-based backend supporting two user roles: **Athletes** and **Coaches**,
 
 ## 🔗 Live API (Hosted via Railway)
 
-https://hydration-backend.up.railway.app
+hydration-backend-copy-production.up.railway.app
 
 ---
 
