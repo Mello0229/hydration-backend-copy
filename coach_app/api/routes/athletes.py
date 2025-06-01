@@ -7,7 +7,7 @@ from shared.database import db
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("/", response_model=list[Athlete])
 async def get_athletes(coach=Depends(get_current_coach)):
     pipeline = [
         {
@@ -65,7 +65,28 @@ async def get_athletes(coach=Depends(get_current_coach)):
             }
         }
     ]
-    return await db.users.aggregate(pipeline).to_list(length=None)
+
+    raw_athletes = await db.users.aggregate(pipeline).to_list(length=None)
+    athletes = []
+
+    for doc in raw_athletes:
+        vitals = doc.get("latest_vitals", {})
+        athlete = {
+            "id": doc.get("username"),
+            "name": doc.get("profile", {}).get("full_name", ""),
+            "sport": doc.get("profile", {}).get("sport", ""),
+            "hydration": doc.get("latest_prediction", {}).get("hydration_level", 0),
+            "heart_rate": float(vitals.get("heart_rate", 0)),
+            "body_temp": float(vitals.get("body_temp", 0)),
+            "skin_conductance": float(vitals.get("skin_conductance", 0)),
+            "ecg_sigmoid": float(vitals.get("ecg_sigmoid", 0)),
+            "status": doc.get("latest_prediction", {}).get("status", "Unknown"),
+            "alerts": doc.get("warnings", [])
+        }
+        athletes.append(athlete)
+
+    return athletes
+
 
 @router.get("/{athlete_id}", response_model=Athlete)
 async def retrieve_athlete(athlete_id: str, coach=Depends(get_current_coach)):

@@ -7,11 +7,14 @@ class Athlete(BaseModel):
     id: str
     name: str
     sport: str
-    hydration_level: int
+    hydration: int
     heart_rate: float
     body_temp: float
-    sweat_rate: float
+    skin_conductance: float
+    ecg_sigmoid: float
     status: str
+    alerts: list = []
+    
 
 class Alert(BaseModel):
     id: str
