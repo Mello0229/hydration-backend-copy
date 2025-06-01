@@ -24,23 +24,32 @@ async def delete_account(user=Depends(get_current_user)):
 @router.post("/athlete/join")
 async def join_coach(data: AthleteJoinCoachSchema, user=Depends(get_current_user)):
     coach = await db["users"].find_one({
-        "full_name": data.coach_name.strip(),
+        "name": data.coach_name.strip(),
         "role": "coach"
     })
-    existing = await db.athletes.find_one({"name": user["username"]})
-    if existing:
-        return {"message": "Athlete already linked to a coach"}
+
     if not coach:
         raise HTTPException(status_code=400, detail="Coach not found")
 
-    # 🔄 Assign athlete to coach
-    await db.athletes.insert_one({
-        "id": str(uuid.uuid4()),
-        "name": user["username"],
-        "sport": user.get("profile", {}).get("sport", "Unknown"),
-        "hydration": 100,
-        "assigned_by": coach["email"],
-        "status": "Healthy"
-    })
+    existing = await db.athletes.find_one({"email": user["email"]})
+    if existing:
+        return {"message": "Athlete already linked to a coach"}
 
+    # Add complete structure as per AthleteDBEntry
+    athlete_entry = {
+        "id": str(uuid.uuid4()),
+        "athlete_id": user.get("profile", {}).get("id", str(uuid.uuid4())),
+        "name": user["username"],
+        "email": user["email"],
+        "sport": user.get("profile", {}).get("sport", "Unknown"),
+        "hydration_level": 100,
+        "heart_rate": 0,
+        "body_temp": 0,
+        "skin_conductance": 0,
+        "ecg_sigmoid": 0,
+        "sweat_rate": 0,
+        "status": "Hydrated",
+        "assigned_by": coach["email"]
+    }
+    await db.athletes.insert_one(athlete_entry)
     return {"message": "Coach linked successfully"}

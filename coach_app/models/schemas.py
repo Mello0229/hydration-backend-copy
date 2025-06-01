@@ -14,7 +14,7 @@ class Athlete(BaseModel):
     ecg_sigmoid: float
     status: str
     alerts: list = []
-    
+
 
 class Alert(BaseModel):
     id: str
@@ -25,7 +25,7 @@ class Alert(BaseModel):
     status: Optional[str] = "active"  # ✅ new field
 
 class CoachProfile(BaseModel):
-    full_name: str
+    name: str      
     sport: str
     email: str
     contact: str

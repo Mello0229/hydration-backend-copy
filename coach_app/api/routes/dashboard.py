@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.get("/")
 async def dashboard(coach=Depends(get_current_coach)):
-    coach_name = coach["full_name"]
+    coach_name = coach["name"]
     
     # Get usernames of athletes assigned to this coach
     athlete_usernames = [

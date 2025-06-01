@@ -11,6 +11,10 @@ class UserSignup(BaseModel):
     confirm_password: str
     role: Literal["athlete", "coach"]
 
+    @property
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
+
     @validator("confirm_password")
     def passwords_match(cls, v, values):
         if "password" in values and v != values["password"]:

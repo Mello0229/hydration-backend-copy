@@ -13,7 +13,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
         {
             "$match": {
                 "role": "athlete",
-                "profile.coach_name": coach["full_name"]
+                "profile.coach_name": coach["name"]
             }
         },
         {
@@ -57,7 +57,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
                 "_id": 0,
                 "username": 1,
                 "email": 1,
-                "profile.full_name": 1,
+                "profile.name": 1,
                 "profile.sport": 1,
                 "latest_prediction": { "$arrayElemAt": ["$latest_prediction", 0] },
                 "latest_vitals": { "$arrayElemAt": ["$latest_vitals", 0] },
@@ -71,22 +71,22 @@ async def get_athletes(coach=Depends(get_current_coach)):
 
     for doc in raw_athletes:
         vitals = doc.get("latest_vitals", {})
+        prediction = doc.get("latest_prediction", {})
         athlete = {
             "id": doc.get("username"),
-            "name": doc.get("profile", {}).get("full_name", ""),
+            "name": doc.get("profile", {}).get("name", ""),
             "sport": doc.get("profile", {}).get("sport", ""),
-            "hydration": doc.get("latest_prediction", {}).get("hydration_level", 0),
+            "hydration": prediction.get("hydration_level", 0),  # ✅ matches Athlete schema
             "heart_rate": float(vitals.get("heart_rate", 0)),
             "body_temp": float(vitals.get("body_temp", 0)),
             "skin_conductance": float(vitals.get("skin_conductance", 0)),
             "ecg_sigmoid": float(vitals.get("ecg_sigmoid", 0)),
-            "status": doc.get("latest_prediction", {}).get("status", "Unknown"),
+            "status": prediction.get("status", "Unknown"),
             "alerts": doc.get("warnings", [])
         }
         athletes.append(athlete)
 
     return athletes
-
 
 @router.get("/{athlete_id}", response_model=Athlete)
 async def retrieve_athlete(athlete_id: str, coach=Depends(get_current_coach)):

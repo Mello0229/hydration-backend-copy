@@ -18,12 +18,27 @@ class User(BaseModel):
     role: Literal['athlete', 'coach']
 
 class UserProfile(BaseModel):
-    full_name: str
-    dob: str  # format: mm/dd/yyyy or ISO
+    name: str
+    dob: str
     weight: float
     gender: Literal["male", "female", "other"]
     sport: str
     coach_name: Optional[str]
+
+class AthleteDBEntry(BaseModel):
+    id: str
+    athlete_id: str
+    name: str
+    email: str
+    sport: str
+    assigned_by: str
+    body_temp: float = 0
+    heart_rate: float = 0
+    hydration_level: int = 0
+    status: str = "Hydrated"
+    sweat_rate: float = 0
+    ecg_sigmoid: float = 0
+    skin_conductance: float = 0
     
 class PasswordChange(BaseModel):
     current_password: str

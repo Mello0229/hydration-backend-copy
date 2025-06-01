@@ -14,7 +14,6 @@ from athlete_app.core.model_loader import get_model, get_scaler
 
 router = APIRouter()
 
-
 @router.post("/receive")
 async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
     results = []
@@ -61,6 +60,7 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
 async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
     timestamp = datetime.utcnow()
 
+    # Save raw sensor data
     await db.sensor_data.insert_one({
         "user": user["username"],
         **input_data,
@@ -68,13 +68,14 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
         "timestamp": timestamp
     })
 
+    # Save prediction result
     await db.predictions.insert_one({
         "user": user["username"],
         "hydration_status": label,
         "timestamp": timestamp
     })
 
-    # ✅ Update inline user.profile.latest_prediction
+    # Update inline user profile
     await db.users.update_one(
         {"username": user["username"]},
         {"$set": {
@@ -88,6 +89,19 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
             }
         }}
     )
+
+    # ✅ Add this to update db.athletes too
+    await db.athletes.update_one(
+        {"email": user["email"]},
+        {"$set": {
+            "hydration_level": label,
+            "heart_rate": input_data["heart_rate"],
+            "body_temp": input_data["body_temperature"],
+            "skin_conductance": input_data["skin_conductance"],
+            "ecg_sigmoid": input_data["ecg_sigmoid"]
+        }}
+    )
+
 
 @router.post("/raw-schema")
 async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
