@@ -1,5 +1,3 @@
-# coach_app/api/routes/athletes.py
-
 from fastapi import APIRouter, HTTPException, Depends
 from coach_app.models.schemas import Athlete
 from coach_app.api.deps import get_current_coach
@@ -9,7 +7,9 @@ router = APIRouter()
 
 @router.get("/", response_model=list[Athlete])
 async def get_athletes(coach=Depends(get_current_coach)):
-    coach_name = coach.get("profile", {}).get("name")
+    coach_profile = coach.get("profile")
+    coach_name = coach_profile.get("name") if isinstance(coach_profile, dict) else None
+
     if not coach_name:
         raise HTTPException(status_code=400, detail="Coach profile missing name")
 
@@ -71,8 +71,8 @@ async def get_athletes(coach=Depends(get_current_coach)):
     ]
 
     raw_athletes = await db.users.aggregate(pipeline).to_list(length=None)
-    athletes = []
 
+    athletes = []
     for doc in raw_athletes:
         vitals = doc.get("latest_vitals", {})
         prediction = doc.get("latest_prediction", {})
@@ -80,7 +80,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
             "id": doc.get("username"),
             "name": doc.get("profile", {}).get("name", ""),
             "sport": doc.get("profile", {}).get("sport", ""),
-            "hydration": prediction.get("hydration_level", 0),  # ✅ matches Athlete schema
+            "hydration": prediction.get("hydration_level", 0),
             "heart_rate": float(vitals.get("heart_rate", 0)),
             "body_temp": float(vitals.get("body_temp", 0)),
             "skin_conductance": float(vitals.get("skin_conductance", 0)),
@@ -92,20 +92,17 @@ async def get_athletes(coach=Depends(get_current_coach)):
 
     return athletes
 
+
 @router.get("/{athlete_id}", response_model=Athlete)
 async def retrieve_athlete(athlete_id: str, coach=Depends(get_current_coach)):
-    """Get details of a specific athlete by ID."""
     athlete = await db.athletes.find_one({"id": athlete_id})
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     return athlete
 
+
 @router.get("/vitals/{athlete_id}")
 async def get_latest_vitals(athlete_id: str, coach=Depends(get_current_coach)):
-    """
-    Get the latest sensor vitals for a specific athlete.
-    """
-    from shared.database import db
     latest_data = await db.sensor_data.find_one({"user": athlete_id}, sort=[("timestamp", -1)])
     if not latest_data:
         raise HTTPException(status_code=404, detail="No sensor data found for this athlete")
