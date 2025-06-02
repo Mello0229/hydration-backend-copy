@@ -47,7 +47,7 @@ async def join_coach(data: AthleteJoinCoachSchema, user=Depends(get_current_user
         "body_temp": 0,
         "skin_conductance": 0,
         "ecg_sigmoid": 0,
-        "sweat_rate": 0,
+        # "sweat_rate": 0,
         "status": "Hydrated",
         "assigned_by": coach["email"]
     }

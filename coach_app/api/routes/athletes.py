@@ -13,7 +13,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
         {
             "$match": {
                 "role": "athlete",
-                "profile.coach_name": coach["name"]
+                "profile.coach_name": coach["profile"]["name"]
             }
         },
         {

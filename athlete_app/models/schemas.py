@@ -36,7 +36,7 @@ class AthleteDBEntry(BaseModel):
     heart_rate: float = 0
     hydration_level: int = 0
     status: str = "Hydrated"
-    sweat_rate: float = 0
+    # sweat_rate: float = 0
     ecg_sigmoid: float = 0
     skin_conductance: float = 0
     
