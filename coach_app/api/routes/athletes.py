@@ -9,11 +9,15 @@ router = APIRouter()
 
 @router.get("/", response_model=list[Athlete])
 async def get_athletes(coach=Depends(get_current_coach)):
+    coach_name = coach.get("profile", {}).get("name")
+    if not coach_name:
+        raise HTTPException(status_code=400, detail="Coach profile missing name")
+
     pipeline = [
         {
             "$match": {
                 "role": "athlete",
-                "profile.coach_name": getattr(coach.profile, "name", None)
+                "profile.coach_name": coach_name
             }
         },
         {
