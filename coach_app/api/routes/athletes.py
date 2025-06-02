@@ -70,7 +70,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
         }
     ]
 
-    raw_athletes = await db.users.aggregate(pipeline).to_list(length=None)
+    raw_athletes = await db.athletes.aggregate(pipeline).to_list(length=None)
 
     athletes = []
     for doc in raw_athletes:
