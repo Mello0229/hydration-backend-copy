@@ -24,7 +24,7 @@ async def update_profile(profile: UserProfile, user=Depends(get_current_user)):
         if not existing_athlete:
             athlete_entry = AthleteDBEntry(
                 id=str(uuid.uuid4()),
-                athlete_id=user["_id"],
+                athlete_id=str(user["_id"]),
                 name=profile.name,
                 email=user["email"],
                 sport=profile.sport,
@@ -37,6 +37,7 @@ async def update_profile(profile: UserProfile, user=Depends(get_current_user)):
     existing = await db.users.find_one({"username": user["username"]})
     existing_profile = existing.get("profile", {})
     profile_data["id"] = existing_profile.get("id", str(uuid.uuid4()))
+    profile_data["coach_name"] = profile.coach_name  # ✅ critical line
 
     await db.users.update_one(
         {"username": user["username"]},
