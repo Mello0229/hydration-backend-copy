@@ -6,31 +6,23 @@ router = APIRouter()
 
 @router.get("/")
 async def dashboard(coach=Depends(get_current_coach)):
-    coach_name = coach["name"]
-    
-    # Get usernames of athletes assigned to this coach
-    athlete_usernames = [
-        doc["username"]
-        async for doc in db.users.find(
-            {"role": "athlete", "profile.coach_name": coach_name},
-            {"username": 1}
-        )
-    ]
+    coach_email = coach["email"]
 
-    total = len(athlete_usernames)
-    
-    dehydrated = await db.predictions.count_documents({
-        "hydration_status": "Dehydrated",
-        "user": { "$in": athlete_usernames }
-    })
+    # Pull all athletes linked to the coach
+    athletes = await db.athletes.find({"assigned_by": coach_email}).to_list(length=None)
 
-    hydrated_pct = 100 - (dehydrated * 100 // total) if total else 0
+    total_athletes = len(athletes)
 
-    trend = [round(80 + i % 5, 1) for i in range(7)]  # Dummy data for now
+    avg_hydration = (
+        sum(a.get("hydration_level", 0) for a in athletes) // total_athletes
+        if total_athletes > 0 else 0
+    )
+
+    critical_hydration = sum(1 for a in athletes if a.get("status") == "Critical")
 
     return {
-        "coach": coach["username"],
-        "total_athletes": total,
-        "hydrated_pct": hydrated_pct,
-        "hydration_trend": trend
+        "totalAthletes": total_athletes,
+        "avgHydration": avg_hydration,
+        "criticalHydration": critical_hydration,
+        # "healthy": total_athletes - critical_hydration,
     }
