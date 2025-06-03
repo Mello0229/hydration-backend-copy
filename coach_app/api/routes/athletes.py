@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from coach_app.models.schemas import Athlete
 from coach_app.api.deps import get_current_coach
 from shared.database import db
+from coach_app.models.schemas import CoachProfile
 
 router = APIRouter()
 
@@ -10,9 +11,11 @@ async def get_athletes(coach=Depends(get_current_coach)):
     if not coach or "email" not in coach:
         raise HTTPException(status_code=401, detail="Invalid or missing coach token")
 
-    coach_name = coach.get("profile", {}).get("name", "")
-    if not coach_name:
+    profile = await db.coach_profile.find_one({"email": coach["email"]})
+    if not profile or not profile.get("name"):
         raise HTTPException(status_code=400, detail="Coach profile missing name")
+
+    coach_name = profile["name"]
 
     pipeline = [
         {"$match": {"assigned_by": coach["email"]}},
