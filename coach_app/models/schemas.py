@@ -7,7 +7,7 @@ class Athlete(BaseModel):
     id: str
     name: str
     sport: str
-    hydration: int
+    hydration_level: int
     heart_rate: float
     body_temp: float
     skin_conductance: float

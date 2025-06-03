@@ -12,5 +12,5 @@ async def coach_exists(name: str) -> bool:
     coach = await db["users"].find_one({
         "name": name.strip(),
         "role": "coach"
-    })
+    })  
     return coach is not None
