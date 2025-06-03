@@ -7,9 +7,10 @@ router = APIRouter()
 
 @router.get("/", response_model=list[Athlete])
 async def get_athletes(coach=Depends(get_current_coach)):
-    coach_profile = coach.get("profile")
-    coach_name = coach_profile.get("name") if isinstance(coach_profile, dict) else None
+    if not coach or "email" not in coach:
+        raise HTTPException(status_code=401, detail="Invalid or missing coach token")
 
+    coach_name = coach.get("profile", {}).get("name", "")
     if not coach_name:
         raise HTTPException(status_code=400, detail="Coach profile missing name")
 
