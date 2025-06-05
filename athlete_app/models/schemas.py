@@ -7,7 +7,7 @@ class SensorData(BaseModel):
     heart_rate: float
     body_temperature: float
     skin_conductance: float
-    ECG_sigmoid: float  
+    ecg_sigmoid: float = Field(..., alias="ECG_sigmoid")
 
 class PredictionResult(BaseModel):
     hydration_status: Literal['Hydrated', 'Slightly Dehydrated', 'Dehydrated']

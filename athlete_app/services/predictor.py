@@ -14,7 +14,7 @@ def predict_hydration(data: dict) -> tuple[str, float]:
         data["heart_rate"]
         + data["body_temperature"]
         + data["skin_conductance"]
-        + data["ECG_sigmoid"]
+        + data["ecg_sigmoid"]
     ) / 4
     data["combined_metrics"] = combined
 
