@@ -20,6 +20,7 @@ class Alert(BaseModel):
     id: str
     athlete_id: str
     alert_type: str
+    title: Optional[str] = None
     description: str
     timestamp: datetime
     status: Optional[str] = "active"  # ✅ new field
