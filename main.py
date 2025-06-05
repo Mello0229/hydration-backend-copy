@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import traceback
+from athlete_app.api.routes import alerts as athlete_alerts
+from coach_app.api.routes import alerts as coach_alerts
 
 # Import routers
 from athlete_app.api.routes import auth, profile as athlete_profile, data, user
@@ -60,10 +62,11 @@ app.include_router(session.router, prefix="/session", tags=["Sessions"])
 app.include_router(coach_auth.router, prefix="/coach/auth", tags=["Coach Auth"])
 app.include_router(dashboard.router, prefix="/dashboard", tags=["Coach Dashboard"])
 app.include_router(athletes.router, prefix="/athletes", tags=["Coach Athletes"])
-app.include_router(alerts.router, prefix="/alerts", tags=["Coach Alerts"])
 app.include_router(coach_profile.router, prefix="/profile", tags=["Coach Profile"])
 app.include_router(sessions.router, prefix="/coach", tags=["Coach Sessions"])
 app.include_router(coach_account.router, prefix="/coach/account", tags=["Coach Account"])
+app.include_router(athlete_alerts.router, prefix="/notifications", tags=["Athlete Alerts"])
+app.include_router(coach_alerts.router, prefix="/alerts", tags=["Coach Alerts"])
 
 # Error middleware
 @app.middleware("http")

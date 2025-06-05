@@ -163,10 +163,10 @@ async def ping():
     return {"status": "alive"}
 
 
-@router.get("/alerts")
-async def get_athlete_alerts(user=Depends(require_athlete)):
-    alerts = db.alerts.find({"athlete_id": user["username"]})
-    return [doc async for doc in alerts]
+# @router.get("/alerts")
+# async def get_athlete_alerts(user=Depends(require_athlete)):
+#     alerts = db.alerts.find({"athlete_id": user["username"]})
+#     return [doc async for doc in alerts]
 
 
 async def save_prediction(input_data: dict, user: dict, label: str, combined: float):

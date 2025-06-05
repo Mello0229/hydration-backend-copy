@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException, Depends
 from coach_app.models.schemas import Athlete
 from coach_app.api.deps import get_current_coach
 from shared.database import db
-from coach_app.models.schemas import CoachProfile
 
 router = APIRouter()
 
