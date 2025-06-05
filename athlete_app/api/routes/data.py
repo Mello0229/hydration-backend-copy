@@ -47,27 +47,27 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
 
         await save_prediction(input_data, user, hydration_label, combined)
 
-        # # Create hydration alert based on hydration level
-        # if combined < 70:
-        #     alert_type = "CRITICAL"
-        #     title = "Critical Hydration Alert"
-        #     description = f"Dehydrated at {round(combined)}%"
-        # elif combined < 85:
-        #     alert_type = "WARNING"
-        #     title = "Hydration Dropped"
-        #     description = f"Hydration dropped to {round(combined)}%"
-        # else:
-        #     alert_type = "REMINDER"
-        #     title = "Hydration OK"
-        #     description = f"Hydrated at {round(combined)}%"
+        # Create hydration alert based on hydration level
+        if combined < 70:
+            alert_type = "CRITICAL"
+            title = "Critical Hydration Alert"
+            description = f"Dehydrated at {round(combined)}%"
+        elif combined < 85:
+            alert_type = "WARNING"
+            title = "Hydration Dropped"
+            description = f"Hydration dropped to {round(combined)}%"
+        else:
+            alert_type = "REMINDER"
+            title = "Hydration OK"
+            description = f"Hydrated at {round(combined)}%"
 
-        # await db.alerts.insert_one({
-        #     "athlete_id": user["username"],
-        #     "alert_type": alert_type,
-        #     "title": title,
-        #     "description": description,
-        #     "timestamp": datetime.utcnow()
-        # })
+        await db.alerts.insert_one({
+            "athlete_id": user["username"],
+            "alert_type": alert_type,
+            "title": title,
+            "description": description,
+            "timestamp": datetime.utcnow()
+        })
 
         results.append({
             "raw_sensor_data": input_data,
@@ -80,51 +80,50 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
         "last_prediction": results[-1] if results else None,
         "all_predictions": results
     }
-async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
-    timestamp = datetime.utcnow()
+# async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
+#     timestamp = datetime.utcnow()
 
-    # Save raw sensor data
-    await db.sensor_data.insert_one({
-        "user": user["username"],
-        **input_data,
-        "combined_metrics": combined,
-        "timestamp": timestamp
-    })
+#     # Save raw sensor data
+#     await db.sensor_data.insert_one({
+#         "user": user["username"],
+#         **input_data,
+#         "combined_metrics": combined,
+#         "timestamp": timestamp
+#     })
 
-    # Save prediction result
-    await db.predictions.insert_one({
-        "user": user["username"],
-        "hydration_status": label,
-        "timestamp": timestamp
-    })
+#     # Save prediction result
+#     await db.predictions.insert_one({
+#         "user": user["username"],
+#         "hydration_status": label,
+#         "timestamp": timestamp
+#     })
 
-    # Update inline user profile
-    await db.users.update_one(
-        {"username": user["username"]},
-        {"$set": {
-            "profile.latest_prediction": {
-                "hydration_status": label,
-                "heart_rate": input_data["heart_rate"],
-                "body_temperature": input_data["body_temperature"],
-                "skin_conductance": input_data["skin_conductance"],
-                "ecg_sigmoid": input_data["ecg_sigmoid"],
-                "timestamp": timestamp
-            }
-        }}
-    )
+#     # Update inline user profile
+#     await db.users.update_one(
+#         {"username": user["username"]},
+#         {"$set": {
+#             "profile.latest_prediction": {
+#                 "hydration_status": label,
+#                 "heart_rate": input_data["heart_rate"],
+#                 "body_temperature": input_data["body_temperature"],
+#                 "skin_conductance": input_data["skin_conductance"],
+#                 "ecg_sigmoid": input_data["ecg_sigmoid"],
+#                 "timestamp": timestamp
+#             }
+#         }}
+#     )
 
-    # ✅ Add this to update db.athletes too
-    await db.athletes.update_one(
-        {"email": user["email"]},
-        {"$set": {
-            "hydration_level": label,
-            "heart_rate": input_data["heart_rate"],
-            "body_temp": input_data["body_temperature"],
-            "skin_conductance": input_data["skin_conductance"],
-            "ecg_sigmoid": input_data["ecg_sigmoid"]
-        }}
-    )
-
+#     # ✅ Add this to update db.athletes too
+#     await db.athletes.update_one(
+#         {"email": user["email"]},
+#         {"$set": {
+#             "hydration_level": label,
+#             "heart_rate": input_data["heart_rate"],
+#             "body_temp": input_data["body_temperature"],
+#             "skin_conductance": input_data["skin_conductance"],
+#             "ecg_sigmoid": input_data["ecg_sigmoid"]
+#         }}
+#     )
 
 @router.post("/raw-schema")
 async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)):
