@@ -11,7 +11,7 @@ from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
 from athlete_app.core.model_loader import get_model, get_scaler
-from athlete_app.api.routes.alert import insert_auto_hydration_alert
+from athlete_app.api.routes.alerts import insert_auto_hydration_alert
 
 router = APIRouter()
 
