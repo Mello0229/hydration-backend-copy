@@ -6,9 +6,22 @@ from bson import ObjectId
 
 router = APIRouter()
 
-@router.get("/", response_model=list[Alert])
-async def get_all_alerts(coach=Depends(get_current_coach)):
-    return [doc async for doc in db.alerts.find()]
+@router.get("/")
+async def get_alerts(coach=Depends(get_current_coach)):
+    cursor = db.alerts.find({"athlete_id": {"$exists": True}})
+    alerts = []
+
+    async for doc in cursor:
+        doc["_id"] = str(doc["_id"])  # serialize ObjectId
+        if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
+            doc["timestamp"] = doc["timestamp"].isoformat()  # serialize datetime
+        alerts.append(doc)
+
+    return alerts
+
+# @router.get("/", response_model=list[Alert])
+# async def get_all_alerts(coach=Depends(get_current_coach)):
+#     return [doc async for doc in db.alerts.find()]
 
 @router.get("/{athlete_id}", response_model=list[Alert])
 async def get_alerts_by_athlete(athlete_id: str, coach=Depends(get_current_coach)):
