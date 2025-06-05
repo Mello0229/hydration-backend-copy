@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends
 from datetime import datetime
 from athlete_app.api.deps import require_athlete
 from athlete_app.core.config import db
+from fastapi.encoders import jsonable_encoder
+
 
 router = APIRouter()
 
@@ -40,4 +42,4 @@ async def insert_hydration_alert(hydration_level: int, user=Depends(require_athl
     }
 
     await db.alerts.insert_one(alert)
-    return {"status": "inserted", "alert": alert}
+    return jsonable_encoder({"status": "inserted", "alert": alert})
