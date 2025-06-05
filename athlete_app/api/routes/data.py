@@ -11,6 +11,7 @@ from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
 from athlete_app.core.model_loader import get_model, get_scaler
+from athlete_app.api.routes.alert import insert_auto_hydration_alert
 
 router = APIRouter()
 
@@ -45,6 +46,28 @@ async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
         hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
 
         await save_prediction(input_data, user, hydration_label, combined)
+
+        # # Create hydration alert based on hydration level
+        # if combined < 70:
+        #     alert_type = "CRITICAL"
+        #     title = "Critical Hydration Alert"
+        #     description = f"Dehydrated at {round(combined)}%"
+        # elif combined < 85:
+        #     alert_type = "WARNING"
+        #     title = "Hydration Dropped"
+        #     description = f"Hydration dropped to {round(combined)}%"
+        # else:
+        #     alert_type = "REMINDER"
+        #     title = "Hydration OK"
+        #     description = f"Hydrated at {round(combined)}%"
+
+        # await db.alerts.insert_one({
+        #     "athlete_id": user["username"],
+        #     "alert_type": alert_type,
+        #     "title": title,
+        #     "description": description,
+        #     "timestamp": datetime.utcnow()
+        # })
 
         results.append({
             "raw_sensor_data": input_data,
@@ -169,19 +192,52 @@ async def ping():
 #     return [doc async for doc in alerts]
 
 
+def map_label_to_percentage(label: str) -> int:
+    if label == "Hydrated":
+        return 90
+    elif label == "Slightly Dehydrated":
+        return 75
+    elif label == "Dehydrated":
+        return 65
+    return 0
+
 async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
-    """
-    Saves sensor data and prediction to the database.
-    Used by both single and batch ingestion.
-    """
+    hydration_percent = map_label_to_percentage(label)
+    timestamp = datetime.utcnow()
+
     await db.sensor_data.insert_one({
         "user": user["username"],
         **input_data,
         "combined_metrics": combined,
-        "timestamp": datetime.utcnow()
+        "timestamp": timestamp
     })
+
     await db.predictions.insert_one({
         "user": user["username"],
         "hydration_status": label,
-        "timestamp": datetime.utcnow()
+        "hydration_percent": hydration_percent,
+        "timestamp": timestamp
     })
+
+    await db.users.update_one(
+        {"username": user["username"]},
+        {"$set": {
+            "profile.latest_prediction": {
+                "hydration_status": label,
+                "hydration_percent": hydration_percent,
+                **input_data,
+                "timestamp": timestamp
+            }
+        }}
+    )
+
+    await db.athletes.update_one(
+        {"email": user["email"]},
+        {"$set": {
+            "hydration_level": hydration_percent,
+            "status": label,
+            **input_data
+        }}
+    )
+
+    await insert_auto_hydration_alert(user, label, hydration_percent)
