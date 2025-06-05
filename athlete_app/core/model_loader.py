@@ -13,7 +13,7 @@ FEATURE_ORDER = [
     "heart_rate",
     "body_temperature",
     "skin_conductance",
-    "ecg_sigmoid",
+    "ECG_sigmoid",
     "combined_metrics"
 ]
 

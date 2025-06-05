@@ -11,7 +11,7 @@ class Athlete(BaseModel):
     heart_rate: float
     body_temp: float
     skin_conductance: float
-    ecg_sigmoid: float
+    ECG_sigmoid: float
     status: str
     alerts: list = []
 
