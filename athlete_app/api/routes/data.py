@@ -146,7 +146,7 @@ async def get_latest_hydration(user=Depends(require_athlete)):
         "heart_rate": vitals["heart_rate"],
         "body_temperature": vitals["body_temperature"],
         "skin_conductance": vitals["skin_conductance"],
-        "ECG_sigmoid": vitals["ECG_sigmoid"],
+        "ecg_sigmoid": vitals["ecg_sigmoid"],
         "timestamp": vitals["timestamp"]
     }
 

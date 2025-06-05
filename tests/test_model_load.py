@@ -10,7 +10,7 @@ def dummy_input():
         "heart_rate": 70,
         "body_temperature": 36.5,
         "skin_conductance": 800,
-        "ECG_sigmoid": 0.7,
+        "ecg_sigmoid": 0.7,
         "combined_metrics": (70 + 36.5 + 800 + 0.7) / 4
     }
 
