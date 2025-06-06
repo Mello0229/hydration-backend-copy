@@ -17,69 +17,64 @@ router = APIRouter()
 
 @router.post("/receive")
 async def receive_data(data: SensorData, user=Depends(require_athlete)):
-    results = []
+    input_data = data.dict()
 
-    for entry in data:
-        input_data = entry.dict()
-
-        for key, value in input_data.items():
-            if value is None or value <= 0:
-                await db.sensor_warnings.insert_one({
-                    "user": user["username"],
-                    "missing_field": key,
-                    "received_data": input_data,
-                    "timestamp": datetime.utcnow()
-                })
-                await db.alerts.insert_one({
-                    "athlete_id": user["username"],
-                    "alert_type": "SensorWarning",
-                    "description": f"Missing or invalid value: {key}",
-                    "timestamp": datetime.utcnow()
-                })
-                return {
+    for key, value in input_data.items():
+        if value is None or value <= 0:
+            await db.sensor_warnings.insert_one({
+                "user": user["username"],
+                "missing_field": key,
+                "received_data": input_data,
+                "timestamp": datetime.utcnow()
+            })
+            await db.alerts.insert_one({
+                "athlete_id": user["username"],
+                "alert_type": "SensorWarning",
+                "description": f"Missing or invalid value: {key}",
+                "timestamp": datetime.utcnow()
+            })
+            return JSONResponse(
+                status_code=400,
+                content={
                     "status": "error",
                     "message": f"Invalid or missing value for: {key}",
                     "received": input_data
                 }
+            )
 
-        prediction, combined = predict_hydration(input_data)
-        hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
+    prediction, combined = predict_hydration(input_data)
+    hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
 
-        await save_prediction(input_data, user, hydration_label, combined)
+    await save_prediction(input_data, user, hydration_label, combined)
 
-        # Create hydration alert based on hydration level
-        if combined < 70:
-            alert_type = "CRITICAL"
-            title = "Critical Hydration Alert"
-            description = f"Dehydrated at {round(combined)}%"
-        elif combined < 85:
-            alert_type = "WARNING"
-            title = "Hydration Dropped"
-            description = f"Hydration dropped to {round(combined)}%"
-        else:
-            alert_type = "REMINDER"
-            title = "Hydration OK"
-            description = f"Hydrated at {round(combined)}%"
+    if combined < 70:
+        alert_type = "CRITICAL"
+        title = "Critical Hydration Alert"
+        description = f"Dehydrated at {round(combined)}%"
+    elif combined < 85:
+        alert_type = "WARNING"
+        title = "Hydration Dropped"
+        description = f"Hydration dropped to {round(combined)}%"
+    else:
+        alert_type = "REMINDER"
+        title = "Hydration OK"
+        description = f"Hydrated at {round(combined)}%"
 
-        await db.alerts.insert_one({
-            "athlete_id": user["username"],
-            "alert_type": alert_type,
-            "title": title,
-            "description": description,
-            "timestamp": datetime.utcnow()
-        })
-
-        results.append({
-            "raw_sensor_data": input_data,
-            "processed_combined_metrics": combined,
-            "hydration_state_prediction": hydration_label
-        })
+    await db.alerts.insert_one({
+        "athlete_id": user["username"],
+        "alert_type": alert_type,
+        "title": title,
+        "description": description,
+        "timestamp": datetime.utcnow()
+    })
 
     return {
         "status": "success",
-        "last_prediction": results[-1] if results else None,
-        "all_predictions": results
+        "hydration_state_prediction": hydration_label,
+        "processed_combined_metrics": combined,
+        "raw_sensor_data": input_data
     }
+
 # async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
 #     timestamp = datetime.utcnow()
 
