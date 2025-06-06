@@ -3,25 +3,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system packages and git-lfs
+# Install system packages
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
-    git \
-    git-lfs \
     libatlas-base-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable Git LFS
-RUN git lfs install
-
-# Copy the entire repo including .git and LFS pointer files
+# Copy code and model files
 COPY . .
 
-# Pull LFS files (this must come after COPY)
-RUN git lfs pull
-
-# Upgrade pip and install requirements
+# Upgrade pip and install correct ML packages
 RUN pip install --upgrade pip
 RUN pip install \
     scikit-learn==1.4.2 \
@@ -30,6 +22,8 @@ RUN pip install \
 
 # Optional check that models exist
 RUN ls -lh athlete_app/model/
+
+ENV PYTHONPATH=/app
 
 # Check model loads before starting API
 CMD ["bash", "-c", "python check/model.py && uvicorn main:app --host 0.0.0.0 --port 8000"]
