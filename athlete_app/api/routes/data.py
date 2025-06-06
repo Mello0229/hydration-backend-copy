@@ -16,7 +16,7 @@ from athlete_app.api.routes.alerts import insert_auto_hydration_alert
 router = APIRouter()
 
 @router.post("/receive")
-async def receive_data(data: List[SensorData], user=Depends(require_athlete)):
+async def receive_data(data: SensorData, user=Depends(require_athlete)):
     results = []
 
     for entry in data:
