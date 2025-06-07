@@ -55,17 +55,23 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
     }
 
     result = await db.alerts.insert_one(alert)
-    
-    # Manually construct the safe JSON response
+
+    # Build JSON-safe response with stringified ObjectId
     response = {
         "status": "inserted",
         "alert": {
-            "id": str(result.inserted_id),  # ✅ safely stringify ObjectId
-            **alert  # merge original fields
+            "id": str(result.inserted_id),
+            "athlete_id": alert["athlete_id"],
+            "alert_type": alert["alert_type"],
+            "title": alert["title"],
+            "description": alert["description"],
+            "hydration_level": alert["hydration_level"],
+            "timestamp": alert["timestamp"].isoformat(),
+            "source": alert["source"]
         }
     }
 
-    return jsonable_encoder(response)
+    return response
 
 # @router.post("/alerts/hydration")
 # async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
