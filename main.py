@@ -39,7 +39,11 @@ app = FastAPI(
 async def log_missing_auth_header(request: Request, call_next):
     if "authorization" not in request.headers:
         print("❌ Missing Authorization Header in request to:", request.url.path)
-    return await call_next(request)
+    try:
+        return await call_next(request)
+    except Exception as e:
+        print("🔥 Middleware caught exception:", e)
+        raise e
 
 # 🌐 Middleware: Log all request headers
 class LogRequestHeadersMiddleware(BaseHTTPMiddleware):
