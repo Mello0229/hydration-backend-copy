@@ -5,9 +5,6 @@ from typing import Optional, Literal, Dict
 from datetime import datetime
 from typing import List
 
-class AthleteAlertsResponse(BaseModel):
-    alerts: List[Alert]
-
 class Alert(BaseModel):
     id: str
     alert_type: str
@@ -17,6 +14,9 @@ class Alert(BaseModel):
     status: Optional[str] = "active"
     hydration_level: Optional[float] = None
     source: Optional[str] = "athlete"
+
+    class AthleteAlertsResponse(BaseModel):
+        alerts: List[Alert]
 
 class SensorData(BaseModel):
     heart_rate: float
