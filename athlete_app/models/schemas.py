@@ -15,8 +15,8 @@ class Alert(BaseModel):
     hydration_level: Optional[float] = None
     source: Optional[str] = "athlete"
 
-    class AthleteAlertsResponse(BaseModel):
-        alerts: List[Alert]
+class AthleteAlertsResponse(BaseModel):
+    alerts: List[Alert]
 
 class SensorData(BaseModel):
     heart_rate: float
