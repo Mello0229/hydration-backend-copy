@@ -3,6 +3,7 @@ from datetime import datetime
 from athlete_app.api.deps import require_athlete
 from athlete_app.core.config import db
 from fastapi.encoders import jsonable_encoder
+from athlete_app.models.schemas import HydrationAlertInput
 
 router = APIRouter()
 
