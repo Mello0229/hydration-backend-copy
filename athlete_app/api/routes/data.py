@@ -235,3 +235,33 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
     )
 
     await insert_auto_hydration_alert(user, label, hydration_percent)
+
+@router.post("/raw-receive")
+async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
+    """
+    Accepts raw sensor input and performs:
+    1. Preprocessing (normalization)
+    2. Prediction using ML
+    3. Save prediction + vitals
+    4. Return hydration status
+    """
+    try:
+        # ✅ Step 1: Preprocess raw data
+        clean_data = extract_features_from_row(data.dict())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # ✅ Step 2: ML Prediction
+    prediction, combined = predict_hydration(clean_data)
+    hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
+
+    # ✅ Step 3: Save to DB
+    await save_prediction(clean_data, user, hydration_label, combined)
+
+    # ✅ Step 4: Return result
+    return {
+        "status": "success",
+        "hydration_state_prediction": hydration_label,
+        "processed_combined_metrics": combined,
+        "raw_sensor_data": clean_data
+    }

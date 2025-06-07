@@ -2,6 +2,21 @@
 from pydantic import BaseModel
 from pydantic.config import ConfigDict
 from typing import Optional, Literal, Dict
+from datetime import datetime
+from typing import List
+
+class AthleteAlertsResponse(BaseModel):
+    alerts: List[Alert]
+
+class Alert(BaseModel):
+    id: str
+    alert_type: str
+    title: Optional[str]
+    description: str
+    timestamp: datetime
+    status: Optional[str] = "active"
+    hydration_level: Optional[float] = None
+    source: Optional[str] = "athlete"
 
 class SensorData(BaseModel):
     heart_rate: float

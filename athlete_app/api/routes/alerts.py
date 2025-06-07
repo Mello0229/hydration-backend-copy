@@ -43,17 +43,18 @@ async def insert_hydration_alert(hydration_level: int, user=Depends(require_athl
 
     alert = {
         "athlete_id": user["username"],
-        "type": alert_data["type"],
+        "alert_type": alert_data["type"],
         "title": alert_data["title"],
         "description": alert_data["description"],
-        "timestamp": datetime.utcnow()
+        "hydration_level": hydration_level,
+        "timestamp": datetime.utcnow(),
+        "source": "athlete"  # 💡 clearly mark alert origin
     }
 
     await db.alerts.insert_one(alert)
     return jsonable_encoder({"status": "inserted", "alert": alert})
 
 async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
-    # Skip alert creation if well hydrated
     if hydration_percent >= 85:
         return
 
@@ -65,8 +66,9 @@ async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydratio
         "title": alert_data["title"],
         "description": alert_data["description"],
         "prediction_label": hydration_label,
-        "hydration_percent": hydration_percent,
-        "timestamp": datetime.utcnow()
+        "hydration_level": hydration_percent,
+        "timestamp": datetime.utcnow(),
+        "source": "ml_model"  # 💡 clearly mark ML-generated alerts
     }
 
     await db.alerts.insert_one(alert)

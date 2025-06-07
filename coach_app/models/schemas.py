@@ -23,7 +23,9 @@ class Alert(BaseModel):
     title: Optional[str] = None
     description: str
     timestamp: datetime
-    status: Optional[str] = "active"  # ✅ new field
+    status: Optional[str] = "active"
+    hydration_level: Optional[float] = None
+    source: Optional[str] = None
 
 class CoachProfile(BaseModel):
     name: str      
