@@ -8,6 +8,15 @@ from bson import ObjectId
 
 router = APIRouter()
 
+def get_coach_summary(hydration_level: float) -> str:
+    if hydration_level < 70:
+        return f"Dehydrated at {hydration_level:.0f}%"
+    elif hydration_level < 85:
+        return f"Hydration dropped to {hydration_level:.0f}%"
+    else:
+        return f"Hydrated at {hydration_level:.0f}%"
+
+
 def get_hydration_alert_details(hydration_level: int):
     if hydration_level < 70:
         return {
@@ -71,6 +80,40 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
         }
     }
 
+    return response@router.post("/alerts/hydration")
+async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
+    hydration_level = payload.hydration_level
+    alert_data = get_hydration_alert_details(hydration_level)
+    coach_msg = get_coach_summary(hydration_level)  # ← Short summary
+
+    alert = {
+        "athlete_id": user["username"],
+        "alert_type": alert_data["type"],
+        "title": alert_data["title"],
+        "description": alert_data["description"],
+        "hydration_level": hydration_level,
+        "timestamp": datetime.utcnow(),
+        "source": "athlete",
+        "coach_message": coach_msg  # ← This is what the coach will read
+    }
+
+    result = await db.alerts.insert_one(alert)
+
+    response = {
+        "status": "inserted",
+        "alert": {
+            "id": str(result.inserted_id),
+            "athlete_id": alert["athlete_id"],
+            "alert_type": alert["alert_type"],
+            "title": alert["title"],
+            "description": alert["description"],
+            "hydration_level": alert["hydration_level"],
+            "timestamp": alert["timestamp"].isoformat(),
+            "source": alert["source"],
+            "coach_message": alert["coach_message"]
+        }
+    }
+
     return response
 
 # @router.post("/alerts/hydration")
@@ -93,7 +136,7 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
 
 async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
     if hydration_percent >= 85:
-        return
+        return  # No alert needed
 
     alert_data = get_hydration_alert_details(hydration_percent)
 
@@ -105,7 +148,8 @@ async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydratio
         "prediction_label": hydration_label,
         "hydration_level": hydration_percent,
         "timestamp": datetime.utcnow(),
-        "source": "ml_model"  # 💡 clearly mark ML-generated alerts
+        "source": "ml_model",  # 💡 clearly mark ML-generated alerts
+        "coach_message": get_coach_summary(hydration_percent)  # 💬 short summary for coach
     }
 
     await db.alerts.insert_one(alert)
