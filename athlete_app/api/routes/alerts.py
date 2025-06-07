@@ -4,6 +4,7 @@ from athlete_app.api.deps import require_athlete
 from athlete_app.core.config import db
 from fastapi.encoders import jsonable_encoder
 from athlete_app.models.schemas import HydrationAlertInput
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -51,10 +52,38 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
         "hydration_level": hydration_level,
         "timestamp": datetime.utcnow(),
         "source": "athlete"
-    }   
+    }
 
-    await db.alerts.insert_one(alert)
-    return jsonable_encoder({"status": "inserted", "alert": alert})
+    result = await db.alerts.insert_one(alert)
+    
+    # Manually construct the safe JSON response
+    response = {
+        "status": "inserted",
+        "alert": {
+            "id": str(result.inserted_id),  # ✅ safely stringify ObjectId
+            **alert  # merge original fields
+        }
+    }
+
+    return jsonable_encoder(response)
+
+# @router.post("/alerts/hydration")
+# async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
+#     hydration_level = payload.hydration_level
+#     alert_data = get_hydration_alert_details(hydration_level)
+
+#     alert = {
+#         "athlete_id": user["username"],
+#         "alert_type": alert_data["type"],
+#         "title": alert_data["title"],
+#         "description": alert_data["description"],
+#         "hydration_level": hydration_level,
+#         "timestamp": datetime.utcnow(),
+#         "source": "athlete"
+#     }   
+
+#     await db.alerts.insert_one(alert)
+#     return jsonable_encoder({"status": "inserted", "alert": alert})
 
 async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
     if hydration_percent >= 85:
