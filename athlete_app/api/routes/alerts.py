@@ -38,7 +38,8 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
     return [doc async for doc in alerts]
 
 @router.post("/alerts/hydration")
-async def insert_hydration_alert(hydration_level: int, user=Depends(require_athlete)):
+async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
+    hydration_level = payload.hydration_level
     alert_data = get_hydration_alert_details(hydration_level)
 
     alert = {
@@ -48,8 +49,8 @@ async def insert_hydration_alert(hydration_level: int, user=Depends(require_athl
         "description": alert_data["description"],
         "hydration_level": hydration_level,
         "timestamp": datetime.utcnow(),
-        "source": "athlete"  # 💡 clearly mark alert origin
-    }
+        "source": "athlete"
+    }   
 
     await db.alerts.insert_one(alert)
     return jsonable_encoder({"status": "inserted", "alert": alert})

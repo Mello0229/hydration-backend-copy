@@ -5,6 +5,9 @@ from typing import Optional, Literal, Dict
 from datetime import datetime
 from typing import List
 
+class HydrationAlertInput(BaseModel):
+    hydration_level: float
+
 class Alert(BaseModel):
     id: str
     alert_type: str
