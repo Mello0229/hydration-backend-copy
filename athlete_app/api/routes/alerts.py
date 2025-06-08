@@ -52,6 +52,7 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
 async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
     hydration_level = payload.hydration_level
     alert_data = get_hydration_alert_details(hydration_level)
+    coach_msg = get_coach_summary(hydration_level)  # ← Short summary
 
     alert = {
         "athlete_id": user["username"],
@@ -60,12 +61,12 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
         "description": alert_data["description"],
         "hydration_level": hydration_level,
         "timestamp": datetime.utcnow(),
-        "source": "athlete"
+        "source": "athlete",
+        "coach_message": coach_msg  # ← This is what the coach will read
     }
 
     result = await db.alerts.insert_one(alert)
 
-    # Build JSON-safe response with stringified ObjectId
     response = {
         "status": "inserted",
         "alert": {
@@ -76,11 +77,13 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
             "description": alert["description"],
             "hydration_level": alert["hydration_level"],
             "timestamp": alert["timestamp"].isoformat(),
-            "source": alert["source"]
+            "source": alert["source"],
+            "coach_message": alert["coach_message"]
         }
     }
 
-    return response@router.post("/alerts/hydration")
+    return response
+
 async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
     hydration_level = payload.hydration_level
     alert_data = get_hydration_alert_details(hydration_level)
