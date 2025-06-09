@@ -17,7 +17,7 @@ async def signup(data: UserSignup):
         "username": f"{data.first_name.lower()}.{data.last_name.lower()}",
         "password": hash_password(data.password),  # ✅ Secure hash
         "role": data.role,
-        "profile": {},
+        "coach_profile": {},
         "settings": {},
         "created_at": datetime.utcnow()
     }
