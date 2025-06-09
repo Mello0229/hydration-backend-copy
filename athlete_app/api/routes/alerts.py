@@ -44,12 +44,9 @@ def get_hydration_alert_details(hydration_level: int):
         }
 
 @router.get("/alerts")
-async def get_alerts(athlete_id: Optional[str] = None):
-    query = {"source": "athlete"}
-    if athlete_id:
-        query["athlete_id"] = athlete_id
-    alerts = await db.alerts.find(query).to_list(100)
-    return alerts
+async def get_athlete_alerts(user=Depends(require_athlete)):
+    alerts = db.alerts.find({"athlete_id": user["username"]})
+    return [doc async for doc in alerts]
 
 @router.post("/alerts/hydration")
 async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
