@@ -6,24 +6,48 @@ from bson import ObjectId
 
 router = APIRouter()
 
+# @router.get("/", response_model=list[Alert])
+# async def get_alerts(coach=Depends(get_current_coach)):
+#     cursor = db.alerts.find({"athlete_id": {"$exists": True}})
+#     alerts = []
+
+#     async for doc in cursor:
+#         # Convert _id
+#         doc["id"] = str(doc.pop("_id"))
+
+#         # Convert timestamp to datetime if it's not already
+#         if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
+#             doc["timestamp"] = doc["timestamp"]
+
+#         # Set default values for optional fields if missing
+#         doc.setdefault("status", "active")
+#         doc.setdefault("hydration_level", None)
+#         doc.setdefault("source", None)
+
+#         alerts.append(doc)
+
+#     return alerts
+
 @router.get("/", response_model=list[Alert])
 async def get_alerts(coach=Depends(get_current_coach)):
-    cursor = db.alerts.find({"athlete_id": {"$exists": True}})
+    # 🔍 Get assigned athletes from coach profile
+    coach_doc = await db.coaches.find_one({"email": coach["email"]})
+    assigned_athletes = coach_doc.get("assigned_athletes", [])
+
+    if not assigned_athletes:
+        return []
+
+    # 🔒 Filter alerts only for assigned athletes
+    cursor = db.alerts.find({
+        "athlete_id": {"$in": assigned_athletes}
+    }).sort("timestamp", -1)
+
     alerts = []
-
     async for doc in cursor:
-        # Convert _id
         doc["id"] = str(doc.pop("_id"))
-
-        # Convert timestamp to datetime if it's not already
-        if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
-            doc["timestamp"] = doc["timestamp"]
-
-        # Set default values for optional fields if missing
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
         doc.setdefault("source", None)
-
         alerts.append(doc)
 
     return alerts
