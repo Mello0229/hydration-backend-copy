@@ -16,6 +16,7 @@ async def update_profile(profile: UserProfile, user=Depends(get_current_user)):
             raise HTTPException(status_code=400, detail="Coach name is required for athletes")
 
         coach = await db.coach_profile.find_one({"name": profile.coach_name})
+
         if not coach:
             raise HTTPException(status_code=404, detail="Assigned coach does not exist")
 
@@ -31,6 +32,10 @@ async def update_profile(profile: UserProfile, user=Depends(get_current_user)):
                 assigned_by=coach["email"]
             ).dict()
             await db.athletes.insert_one(athlete_entry)
+            await db.coaches.update_one(
+                {"email": coach["email"]}, 
+                {"$addToSet": {"assigned_athletes": user["username"]}}
+                )
 
     # Update user profile in db.users
     profile_data = profile.dict()
