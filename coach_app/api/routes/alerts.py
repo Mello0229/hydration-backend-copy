@@ -32,7 +32,7 @@ router = APIRouter()
 async def get_alerts(coach=Depends(get_current_coach)):
     # 🔍 Get assigned athletes from coach profile
     coach_doc = await db.coaches.find_one({"email": coach["email"]})
-    assigned_athletes = coach_doc.get("assigned_athletes", [])
+    assigned_athletes = coach_doc.get("athlete_id", [])
 
     if not assigned_athletes:
         return []
