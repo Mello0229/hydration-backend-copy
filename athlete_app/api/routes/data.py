@@ -127,7 +127,6 @@ async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)
         record["_id"] = str(record["_id"])
     return record or {"hydration_status": "Unknown"}
 
-
 @router.get("/hydration/status")
 async def get_latest_hydration(user=Depends(require_athlete)):
     prediction = await db.predictions.find_one({"user": user["username"]}, sort=[("timestamp", -1)])
