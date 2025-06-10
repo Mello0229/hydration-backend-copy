@@ -32,7 +32,7 @@ class Alert(BaseModel):
     coach_message: Optional[str] = None
 
 class AthleteAlertsResponse(BaseModel):
-    alerts: List[Alert]
+    alerts: list[Alert]
 
 class SensorData(BaseModel):
     heart_rate: float
