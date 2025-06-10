@@ -237,7 +237,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
 
 @router.post("/raw-receive")
 async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
-    """ 
+    """
     Accepts raw sensor input and performs:
     1. Preprocessing (normalization)
     2. Prediction using ML
@@ -245,28 +245,56 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
     4. Return hydration status
     """
     try:
-        # Create a buffer variable to filter out unneeded data (e.g., analog_calibration_pin, time, ir)
-        buffer_data = {key: value for key, value in data.dict().items() if key in ['max30105', 'gy906', 'groveGsr', 'ad8232']}
-        
-        # Now overwrite the original data with the buffer_data
-        data = RawSensorInput(**buffer_data)  # Convert the filtered dictionary back to RawSensorInput
-        
-        # ✅ Step 1: Preprocess raw data
-        clean_data = extract_features_from_row(data.dict())
+        # ✅ FIX HERE: Make sure input is a dict, not a list
+        input_dict = data.model_dump()  # use `model_dump()` instead of `dict()` (pydantic v2+)
+        clean_data = extract_features_from_row(input_dict)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # ✅ Step 2: ML Prediction
     prediction, combined = predict_hydration(clean_data)
     hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
 
-    # ✅ Step 3: Save to DB
     await save_prediction(clean_data, user, hydration_label, combined)
 
-    # ✅ Step 4: Return result
     return {
         "status": "success",
         "hydration_state_prediction": hydration_label,
         "processed_combined_metrics": combined,
         "raw_sensor_data": clean_data
     }
+
+# @router.post("/raw-receive")
+# async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
+#     """ 
+#     Accepts raw sensor input and performs:
+#     1. Preprocessing (normalization)
+#     2. Prediction using ML
+#     3. Save prediction + vitals
+#     4. Return hydration status
+#     """
+#     try:
+#         # Create a buffer variable to filter out unneeded data (e.g., analog_calibration_pin, time, ir)
+#         buffer_data = {key: value for key, value in data.dict().items() if key in ['max30105', 'gy906', 'groveGsr', 'ad8232']}
+        
+#         # Now overwrite the original data with the buffer_data
+#         data = RawSensorInput(**buffer_data)  # Convert the filtered dictionary back to RawSensorInput
+        
+#         # ✅ Step 1: Preprocess raw data
+#         clean_data = extract_features_from_row(data.dict())
+#     except ValueError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
+
+#     # ✅ Step 2: ML Prediction
+#     prediction, combined = predict_hydration(clean_data)
+#     hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
+
+#     # ✅ Step 3: Save to DB
+#     await save_prediction(clean_data, user, hydration_label, combined)
+
+#     # ✅ Step 4: Return result
+#     return {
+#         "status": "success",
+#         "hydration_state_prediction": hydration_label,
+#         "processed_combined_metrics": combined,
+#         "raw_sensor_data": clean_data
+#     }
