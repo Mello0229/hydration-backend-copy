@@ -3,6 +3,7 @@ from coach_app.api.deps import get_current_coach
 from coach_app.models.schemas import Alert
 from shared.database import db
 from bson import ObjectId
+from typing import List
 
 router = APIRouter()
 
@@ -29,17 +30,31 @@ router = APIRouter()
 #     return alerts
 
 @router.get("/", response_model=List[Alert])
-async def get_alerts(coach_name: str = Query(...)):
-    # Fetch all users assigned to this coach
-    athlete_users = list(db.users.find({"coach_name": coach_name}))
+async def get_alerts(coach=Depends(get_current_coach)):
+    # ✅ Get coach's profile
+    coach_profile = await db.coach_profile.find_one({"email": coach["email"]})
+    if not coach_profile or "name" not in coach_profile:
+        raise HTTPException(status_code=400, detail="Coach profile missing name")
 
-    # Extract athlete usernames
+    coach_name = coach_profile["name"]
+
+    # ✅ Find users (athletes) who joined using this coach name
+    athlete_users = await db.users.find({"coach_name": coach_name}).to_list(length=None)
     athlete_usernames = [user["username"] for user in athlete_users]
 
-    # Query alerts for those athlete usernames
-    alerts = list(db.alerts.find(
-        {"athlete_id": {"$in": athlete_usernames}}
-    ).sort("timestamp", -1))
+    if not athlete_usernames:
+        return []
+
+    # ✅ Fetch alerts for those athlete usernames
+    cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
+
+    alerts = []
+    async for doc in cursor:
+        doc["id"] = str(doc.pop("_id"))
+        doc.setdefault("status", "active")
+        doc.setdefault("hydration_level", None)
+        doc.setdefault("source", None)
+        alerts.append(doc)
 
     return alerts
 
