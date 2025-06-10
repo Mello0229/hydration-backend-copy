@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from pydantic.config import ConfigDict
 from typing import Optional, Literal, Dict
 from datetime import datetime
-from typing import List
 from enum import Enum
+from typing import Optional
 
 class HydrationStatus(str, Enum):
     HYDRATED = "Hydrated"
@@ -80,19 +80,23 @@ class PasswordChange(BaseModel):
 class AthleteJoinCoachSchema(BaseModel):
     coach_name: str
 
-class RawSensorInput(BaseModel):
-    max30105: Dict[str, float]  # e.g., {"bpm": 72}
-    gy906: float                # body temp
-    groveGsr: float             # skin conductance
-    ad8232: int                 # raw ECG value
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "max30105": {"bpm": 72},
-                "gy906": 36.5,
-                "groveGsr": 1200,
-                "ad8232": 2048
-            }
-        }
+class RawSensorInput(BaseModel):  
+    max30105: Dict[str, float]  # e.g., {"bpm": 72, "ir": 25279}  
+    gy906: float                # body temp  
+    groveGsr: float             # skin conductance  
+    ad8232: int                 # raw ECG value  
+    time: Optional[int] = None  # Optional timestamp
+    analog_calibration_pin: Optional[int] = None  # Optional analog calibration pin value  
+  
+    model_config = ConfigDict(  
+        json_schema_extra={  
+            "example": {  
+                "max30105": {"bpm": 72, "ir": 25279},  
+                "gy906": 36.5,  
+                "groveGsr": 1200,  
+                "ad8232": 2048,  
+                "time": 1749538669,  
+                "analog_calibration_pin": 760  
+            }  
+        }  
     )

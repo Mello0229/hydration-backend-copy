@@ -237,7 +237,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
 
 @router.post("/raw-receive")
 async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
-    """
+    """ 
     Accepts raw sensor input and performs:
     1. Preprocessing (normalization)
     2. Prediction using ML
@@ -245,6 +245,12 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
     4. Return hydration status
     """
     try:
+        # Create a buffer variable to filter out unneeded data (e.g., analog_calibration_pin, time, ir)
+        buffer_data = {key: value for key, value in data.dict().items() if key in ['max30105', 'gy906', 'groveGsr', 'ad8232']}
+        
+        # Now overwrite the original data with the buffer_data
+        data = RawSensorInput(**buffer_data)  # Convert the filtered dictionary back to RawSensorInput
+        
         # ✅ Step 1: Preprocess raw data
         clean_data = extract_features_from_row(data.dict())
     except ValueError as e:
