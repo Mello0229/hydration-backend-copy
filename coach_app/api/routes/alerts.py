@@ -31,24 +31,25 @@ router = APIRouter()
 
 @router.get("/", response_model=List[Alert])
 async def get_alerts(coach=Depends(get_current_coach)):
-    # ✅ Get coach's profile
-    coach_profile = await db.coach_profile.find_one({"email": coach["email"]})
+    coach_email = coach["email"]
+
+    # Step 1: Get coach profile
+    coach_profile = await db.coach_profile.find_one({"email": coach_email})
     if not coach_profile or "name" not in coach_profile:
-        raise HTTPException(status_code=400, detail="Coach profile missing name")
+        raise HTTPException(status_code=400, detail="Coach profile missing or incomplete")
 
-    coach_name = coach_profile["name"]  # Example: "James Diaz"
+    coach_name = coach_profile["name"]
 
-    # ✅ Get all athletes who joined this coach
-    athletes = await db.athletes.find({"coach_name": coach_name}).to_list(length=None)
+    # Step 2: Get all athletes with this coach_name
+    athlete_docs = await db.athletes.find({"coach_name": coach_name}).to_list(length=None)
+    username_to_name = {a["username"]: a["name"] for a in athlete_docs}
+    athlete_usernames = list(username_to_name.keys())
 
-    # ✅ Extract athlete IDs (these are used in db.alerts as athlete_id)
-    athlete_ids = [athlete["athlete_id"] for athlete in athletes if "athlete_id" in athlete]
-
-    if not athlete_ids:
+    if not athlete_usernames:
         return []
 
-    # ✅ Fetch alerts for these athlete IDs
-    cursor = db.alerts.find({"athlete_id": {"$in": athlete_ids}}).sort("timestamp", -1)
+    # Step 3: Fetch alerts from those athletes
+    cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
 
     alerts = []
     async for doc in cursor:
@@ -56,6 +57,11 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
         doc.setdefault("source", None)
+
+        # Attach athlete full name from db.athletes
+        athlete_username = doc.get("athlete_id")
+        doc["athlete_name"] = username_to_name.get(athlete_username, athlete_username)  # fallback
+
         alerts.append(doc)
 
     return alerts
