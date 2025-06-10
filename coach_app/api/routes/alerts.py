@@ -32,14 +32,14 @@ router = APIRouter()
 async def get_alerts(coach=Depends(get_current_coach)):
     # 🔍 Fetch coach document with assigned athletes
     coach_doc = await db.coaches.find_one({"email": coach["email"]})
-    assigned_athletes = coach_doc.get("assigned_athletes", [])
+    assigned_usernames = coach_doc.get("assigned_athletes", [])
 
-    if not assigned_athletes:
+    if not assigned_usernames:
         return []
 
     # 🔒 Filter alerts by assigned athlete_ids
     cursor = db.alerts.find({
-        "athlete_id": {"$in": assigned_athletes}
+        "athlete_id": {"$in": assigned_usernames}
     }).sort("timestamp", -1)
 
     alerts = []
