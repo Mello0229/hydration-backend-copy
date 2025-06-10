@@ -48,41 +48,68 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
     alerts = db.alerts.find({"athlete_id": user["username"]})
     return [doc async for doc in alerts]
 
+# @router.post("/alerts/hydration")
+# async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
+#     hydration_level = payload.hydration_level
+#     alert_data = get_hydration_alert_details(hydration_level)
+#     coach_msg = get_coach_summary(hydration_level)  # ← Short summary
+
+#     alert = {
+#         "athlete_id": user["username"],
+#         "alert_type": alert_data["type"],
+#         "title": alert_data["title"],
+#         "description": alert_data["description"],
+#         "hydration_level": hydration_level,
+#         "timestamp": datetime.utcnow(),
+#         "source": "athlete",
+#         "coach_message": coach_msg  # ← This is what the coach will read
+#     }
+
+#     result = await db.alerts.insert_one(alert)
+
+#     response = {
+#         "status": "inserted",
+#         "alert": {
+#             "id": str(result.inserted_id),
+#             "athlete_id": alert["athlete_id"],
+#             "alert_type": alert["alert_type"],
+#             "title": alert["title"],
+#             "description": alert["description"],
+#             "hydration_level": alert["hydration_level"],
+#             "timestamp": alert["timestamp"].isoformat(),
+#             "source": alert["source"],
+#             "coach_message": alert["coach_message"]
+#         }
+#     }
+
+#     return response
+
 @router.post("/alerts/hydration")
-async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
-    hydration_level = payload.hydration_level
-    alert_data = get_hydration_alert_details(hydration_level)
-    coach_msg = get_coach_summary(hydration_level)  # ← Short summary
+async def create_hydration_alert(data: HydrationAlertInput):
+    hydration_level = data.hydration_level
 
-    alert = {
-        "athlete_id": user["username"],
-        "alert_type": alert_data["type"],
-        "title": alert_data["title"],
-        "description": alert_data["description"],
-        "hydration_level": hydration_level,
+    # ✅ Generate summary message for coach
+    if hydration_level < 70:
+        description = f"Dehydrated at {hydration_level:.0f}%"
+    elif hydration_level < 85:
+        description = f"Hydration dropped to {hydration_level:.0f}%"
+    else:
+        description = f"Hydrated at {hydration_level:.0f}%"
+
+    alert_doc = {
+        "athlete_id": data.athlete_id,
+        "alert_type": data.alert_type,
+        "title": data.title,
+        "description": description,            # ✅ Short summary for coach app
         "timestamp": datetime.utcnow(),
-        "source": "athlete",
-        "coach_message": coach_msg  # ← This is what the coach will read
+        "status": "active",
+        "hydration_level": hydration_level,
+        "source": "athlete",                   # Optional but good
+        "coach_message": data.message          # Optional long message
     }
 
-    result = await db.alerts.insert_one(alert)
-
-    response = {
-        "status": "inserted",
-        "alert": {
-            "id": str(result.inserted_id),
-            "athlete_id": alert["athlete_id"],
-            "alert_type": alert["alert_type"],
-            "title": alert["title"],
-            "description": alert["description"],
-            "hydration_level": alert["hydration_level"],
-            "timestamp": alert["timestamp"].isoformat(),
-            "source": alert["source"],
-            "coach_message": alert["coach_message"]
-        }
-    }
-
-    return response
+    await db.alerts.insert_one(alert_doc)
+    return {"message": "Hydration alert created"}
 
 async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
     hydration_level = payload.hydration_level

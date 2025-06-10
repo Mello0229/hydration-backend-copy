@@ -60,7 +60,8 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
         # Attach athlete full name from db.athletes
         athlete_username = doc.get("athlete_id")
-        doc["athlete_name"] = username_to_name.get(athlete_username, athlete_username)  # fallback
+        # doc["athlete_name"] = username_to_name.get(athlete_username, athlete_username)  # fallback
+        doc["athlete_name"] = username_to_name.get(doc["athlete_id"], "Unknown")
 
         alerts.append(doc)
 

@@ -4,13 +4,25 @@ from pydantic.config import ConfigDict
 from typing import Optional, Literal, Dict
 from datetime import datetime
 from typing import List
+from enum import Enum
+
+class HydrationStatus(str, Enum):
+    HYDRATED = "Hydrated"
+    SLIGHTLY_DEHYDRATED = "Slightly Dehydrated"
+    DEHYDRATED = "Dehydrated"
+
+class AlertType(str, Enum):
+    REMINDER = "REMINDER"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
 
 class HydrationAlertInput(BaseModel):
     hydration_level: float
 
 class Alert(BaseModel):
     id: str
-    alert_type: str
+    athlete_id: Optional[str] = None
+    alert_type: AlertType
     title: Optional[str]
     description: str
     timestamp: datetime
@@ -30,6 +42,8 @@ class SensorData(BaseModel):
 
 class PredictionResult(BaseModel):
     hydration_status: Literal['Hydrated', 'Slightly Dehydrated', 'Dehydrated']
+    hydration_level: Optional[float] = None
+    timestamp: Optional[datetime] = None
 
 class User(BaseModel):
     username: str
@@ -54,7 +68,7 @@ class AthleteDBEntry(BaseModel):
     body_temp: float = 0
     heart_rate: float = 0
     hydration_level: int = 0
-    status: str = "Hydrated"
+    status: HydrationStatus = HydrationStatus.HYDRATED
     # sweat_rate: float = 0
     ecg_sigmoid: float = 0
     skin_conductance: float = 0
