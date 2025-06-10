@@ -253,7 +253,12 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
 
     prediction, combined = predict_hydration(clean_data)
     # hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
-    hydration_label = HYDRATION_LABELS[prediction] if 0 <= prediction < len(HYDRATION_LABELS) else "Unknown"
+    HYDRATION_LABELS = {
+    0: "Hydrated",
+    1: "Slightly Dehydrated",
+    2: "Dehydrated"
+    }
+    hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")  # ✅ valid now
 
     await save_prediction(clean_data, user, hydration_label, combined)
 
