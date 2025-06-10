@@ -56,6 +56,38 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc.setdefault("source", None)
         alerts.append(doc)
 
+    return alerts@router.get("/", response_model=List[Alert])
+async def get_alerts(coach=Depends(get_current_coach)):
+    coach_email = coach["email"]
+
+    # Step 1: Fetch coach profile
+    coach_profile = await db.coach_profile.find_one({"email": coach_email})
+    if not coach_profile or "name" not in coach_profile:
+        raise HTTPException(status_code=400, detail="Coach profile missing or incomplete")
+
+    coach_name = coach_profile["name"]  # e.g., "James Diaz"
+
+    # Step 2: Get users (athletes) with that coach_name
+    athletes = await db.users.find({"coach_name": coach_name}).to_list(length=None)
+    athlete_usernames = [a["username"] for a in athletes]  # e.g., "stephen.curry"
+
+    print(f"[DEBUG] Coach '{coach_name}' has athletes: {athlete_usernames}")
+
+    if not athlete_usernames:
+        return []
+
+    # Step 3: Fetch alerts where athlete_id matches usernames
+    alerts_cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
+
+    alerts = []
+    async for doc in alerts_cursor:
+        doc["id"] = str(doc.pop("_id"))
+        doc.setdefault("status", "active")
+        doc.setdefault("hydration_level", None)
+        doc.setdefault("source", None)
+        alerts.append(doc)
+
+    print(f"[DEBUG] Found {len(alerts)} alerts for coach '{coach_name}'")
     return alerts
 
 @router.get("/{athlete_id}", response_model=list[Alert])
