@@ -259,6 +259,7 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
     1: "Slightly Dehydrated",
     2: "Dehydrated"
     }
+
     # hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
 
     # try:
@@ -277,7 +278,7 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
 
     return {
         "status": "success",
-        "hydration_state_prediction": hydration_label,
+        "hydration_state_prediction": prediction,
         "processed_combined_metrics": combined,
         "raw_sensor_data": clean_data
     }
