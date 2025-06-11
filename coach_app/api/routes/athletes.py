@@ -68,7 +68,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
                 "ecg_sigmoid": 1,
                 "skin_conductance": 1,
                 "heart_rate": 1,
-                "body_temp": 1,
+                "body_temperature": 1,
                 "latest_prediction": {"$arrayElemAt": ["$latest_prediction", 0]},
                 "latest_vitals": {"$arrayElemAt": ["$latest_vitals", 0]},
                 "warnings": 1
@@ -91,7 +91,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
         "assigned_by": doc.get("assigned_by", ""),
         "hydration_level": int(doc.get("hydration_level", 0)),
         "heart_rate": float(vitals.get("heart_rate", 0)),
-        "body_temp": float(vitals.get("body_temp", 0)),
+        "body_temperature": float(vitals.get("body_temperature", 0)),
         "skin_conductance": float(vitals.get("skin_conductance", 0)),
         "ecg_sigmoid": float(vitals.get("ecg_sigmoid", 0)),
         "status": doc.get("status", "Unknown"),

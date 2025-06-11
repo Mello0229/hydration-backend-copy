@@ -65,14 +65,15 @@ class AthleteDBEntry(BaseModel):
     email: str
     sport: str
     assigned_by: str
-    body_temp: float = 0
+    # body_temp: float = 0
     heart_rate: float = 0
     hydration_level: int = 0
     status: HydrationStatus = HydrationStatus.HYDRATED
     # sweat_rate: float = 0
     ecg_sigmoid: float = 0
     skin_conductance: float = 0
-    
+    body_temperature: float = 0
+
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str

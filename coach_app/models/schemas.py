@@ -9,7 +9,7 @@ class Athlete(BaseModel):
     sport: str
     hydration_level: int
     heart_rate: float
-    body_temp: float
+    body_temperature: float
     skin_conductance: float
     ecg_sigmoid: float
     status: str
