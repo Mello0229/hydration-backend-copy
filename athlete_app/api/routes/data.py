@@ -252,7 +252,6 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
         raise HTTPException(status_code=400, detail=str(e))
 
     prediction, combined = predict_hydration(clean_data)
-    print("PREDICTION:", prediction, type(prediction))
     # hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
     HYDRATION_LABELS = {
     0: "Hydrated",
@@ -261,15 +260,15 @@ async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
     }
     # hydration_label = HYDRATION_LABELS.get(prediction, "Unknown")
 
-    # try:
-    #     hydration_label = HYDRATION_LABELS[prediction] 
-    # except Exception: 
-    #     hydration_label = "Unknown"
-
     try:
-        hydration_label = HYDRATION_LABELS[int(prediction)]
-    except (ValueError, KeyError, TypeError):
-        hydration_label = "Unknown" 
+        hydration_label = HYDRATION_LABELS[prediction] 
+    except Exception: 
+        hydration_label = "Unknown"
+
+    # try:
+    #     hydration_label = HYDRATION_LABELS[int(prediction)]
+    # except (ValueError, KeyError, TypeError):
+    #     hydration_label = "Unknown"
 
     await save_prediction(clean_data, user, hydration_label, combined)
 
