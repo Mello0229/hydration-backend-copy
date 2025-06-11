@@ -29,16 +29,19 @@ def extract_features_from_row(row: Dict) -> Dict:
     try:
         bpm = float(row.get("max30105", {}).get("bpm", 0))
         temp = float(row.get("gy906", 0))
-        gsr = float(row.get("groveGsr", 0))
+        raw_gsr = float(row.get("groveGsr", 0))
         ecg = int(row.get("ad8232", 0))
 
         if not all([
             validate_sensor_value("bpm", bpm),
             validate_sensor_value("gy906", temp),
-            validate_sensor_value("groveGsr", gsr),
+            validate_sensor_value("groveGsr", raw_gsr),
             validate_sensor_value("ad8232", ecg),
         ]):
             raise ValueError("Sensor reading out of valid range.")
+
+        # ✅ Normalize GSR from raw (0–2000) to ~1.5–2.3 µS
+        gsr = ((raw_gsr / 2000.0) * 0.8) + 1.5
 
         return {
             "heart_rate": bpm,
