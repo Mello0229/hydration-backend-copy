@@ -200,7 +200,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
     timestamp = datetime.utcnow()
 
     await db.sensor_data.insert_one({
-        "user": user["username"],
+        "user": user["email"],
         **input_data,
         "combined_metrics": combined,
         "hydration_level": hydration_percent,
