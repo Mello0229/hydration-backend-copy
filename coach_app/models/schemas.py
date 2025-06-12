@@ -13,8 +13,7 @@ class Athlete(BaseModel):
     skin_conductance: float
     ecg_sigmoid: float
     status: str
-    alerts: list = []
-
+    # alerts: list = []
 
 class Alert(BaseModel):
     id: str
