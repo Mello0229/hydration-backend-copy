@@ -1,3 +1,6 @@
+import pydantic
+from bson import ObjectId
+pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 from fastapi import APIRouter, HTTPException, Depends
 from coach_app.models.schemas import Athlete
 from coach_app.api.deps import get_current_coach
