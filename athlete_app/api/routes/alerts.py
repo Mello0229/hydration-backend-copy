@@ -85,27 +85,20 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
 #     return response
 
 @router.post("/alerts/hydration")
-async def create_hydration_alert(data: HydrationAlertInput):
+async def create_hydration_alert(data: HydrationAlertInput, user=Depends(require_athlete)):
     hydration_level = data.hydration_level
-
-    # ✅ Generate summary message for coach
-    if hydration_level < 70:
-        description = f"Dehydrated at {hydration_level:.0f}%"
-    elif hydration_level < 85:
-        description = f"Hydration dropped to {hydration_level:.0f}%"
-    else:
-        description = f"Hydrated at {hydration_level:.0f}%"
+    alert_data = get_hydration_alert_details(hydration_level)
 
     alert_doc = {
-        "athlete_id": data.athlete_id,
-        "alert_type": data.alert_type,
-        "title": data.title,
-        "description": description,            # ✅ Short summary for coach app
+        "athlete_id": user["username"],               # ✅ Use current user
+        "alert_type": alert_data["type"],
+        "title": alert_data["title"],
+        "description": alert_data["description"],
         "timestamp": datetime.utcnow(),
         "status": "active",
         "hydration_level": hydration_level,
-        "source": "athlete",                   # Optional but good
-        "coach_message": data.message          # Optional long message
+        "source": "athlete",
+        "coach_message": get_coach_summary(hydration_level)
     }
 
     await db.alerts.insert_one(alert_doc)
@@ -171,15 +164,14 @@ async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydratio
     alert_data = get_hydration_alert_details(hydration_percent)
 
     alert = {
-        "athlete_id": user["username"],
-        "type": alert_data["type"],
+        "athlete_id": user["username"],               # ✅ Must be username
+        "alert_type": alert_data["type"],             # ✅ Consistent naming
         "title": alert_data["title"],
         "description": alert_data["description"],
-        "prediction_label": hydration_label,
         "hydration_level": hydration_percent,
         "timestamp": datetime.utcnow(),
-        "source": "ml_model",  # 💡 clearly mark ML-generated alerts
-        "coach_message": get_coach_summary(hydration_percent)  # 💬 short summary for coach
+        "source": "ml_model",
+        "coach_message": get_coach_summary(hydration_percent)
     }
 
     await db.alerts.insert_one(alert)
