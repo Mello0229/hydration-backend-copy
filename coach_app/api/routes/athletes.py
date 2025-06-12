@@ -90,15 +90,15 @@ async def get_athletes(coach=Depends(get_current_coach)):
         "sport": doc.get("sport", ""),
         "assigned_by": doc.get("assigned_by", ""),
         "hydration_level": int(doc.get("hydration_level", 0)),
-        # "heart_rate": float(vitals.get("heart_rate", 0)),
-        # "body_temperature": float(vitals.get("body_temperature", 0)),
-        # "skin_conductance": float(vitals.get("skin_conductance", 0)),
-        # "ecg_sigmoid": float(vitals.get("ecg_sigmoid", 0)),
+        "heart_rate": float(vitals.get("heart_rate", 0)),
+        "body_temperature": float(vitals.get("body_temperature", 0)),
+        "skin_conductance": float(vitals.get("skin_conductance", 0)),
+        "ecg_sigmoid": float(vitals.get("ecg_sigmoid", 0)),
 
-        "heart_rate": float(doc.get("heart_rate", 0)),
-        "body_temperature": float(doc.get("body_temperature", 0)),
-        "skin_conductance": float(doc.get("skin_conductance", 0)),
-        "ecg_sigmoid": float(doc.get("ecg_sigmoid", 0)),
+        # "heart_rate": float(doc.get("heart_rate", 0)),
+        # "body_temperature": float(doc.get("body_temperature", 0)),
+        # "skin_conductance": float(doc.get("skin_conductance", 0)),
+        # "ecg_sigmoid": float(doc.get("ecg_sigmoid", 0)),
 
         "status": doc.get("status", "Unknown"),
         "alerts": doc.get("warnings", [])
