@@ -208,7 +208,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
     })
 
     await db.predictions.insert_one({
-        "user": user["username"],
+        "user": user["email"],
         "hydration_status": label,
         "hydration_percent": hydration_percent,
         "timestamp": timestamp
