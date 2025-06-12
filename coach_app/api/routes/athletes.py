@@ -89,7 +89,7 @@ async def get_athletes(coach=Depends(get_current_coach)):
         "email": doc.get("email", ""),
         "sport": doc.get("sport", ""),
         "assigned_by": doc.get("assigned_by", ""),
-        "hydration_level": int(doc.get("hydration_level", 0)),
+        "hydration_level": int(vitals.get("hydration_level", 0)),
         "heart_rate": float(vitals.get("heart_rate", 0)),
         "body_temperature": float(vitals.get("body_temperature", 0)),
         "skin_conductance": float(vitals.get("skin_conductance", 0)),
