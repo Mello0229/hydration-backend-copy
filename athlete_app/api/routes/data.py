@@ -203,6 +203,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
         "user": user["username"],
         **input_data,
         "combined_metrics": combined,
+        "hydration_level": hydration_percent,
         "timestamp": timestamp
     })
 
