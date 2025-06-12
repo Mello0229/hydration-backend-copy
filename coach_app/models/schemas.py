@@ -3,6 +3,15 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+class SensorData(BaseModel):
+    id: str
+    hydration_level: int
+    heart_rate: float
+    body_temperature: float
+    skin_conductance: float
+    ecg_sigmoid: float
+    combined_metrics: float
+
 class Athlete(BaseModel):
     id: str
     name: str

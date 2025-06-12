@@ -1,8 +1,5 @@
-import pydantic
-from bson import ObjectId
-pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 from fastapi import APIRouter, HTTPException, Depends
-from coach_app.models.schemas import Athlete
+from coach_app.models.schemas import Athlete, SensorData
 from coach_app.api.deps import get_current_coach
 from shared.database import db
 
@@ -119,7 +116,7 @@ async def retrieve_athlete(athlete_id: str, coach=Depends(get_current_coach)):
     return athlete
 
 
-@router.get("/vitals/{athlete_id}")
+@router.get("/vitals/{athlete_id}", response_model=SensorData)
 async def get_latest_vitals(athlete_id: str, coach=Depends(get_current_coach)):
     latest_data = await db.sensor_data.find_one({"user": athlete_id}, sort=[("timestamp", -1)])
     if not latest_data:

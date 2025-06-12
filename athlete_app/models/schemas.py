@@ -35,10 +35,13 @@ class AthleteAlertsResponse(BaseModel):
     alerts: list[Alert]
 
 class SensorData(BaseModel):
+    id: str
+    hydration_level: int
     heart_rate: float
     body_temperature: float
     skin_conductance: float
     ecg_sigmoid: float
+    combined_metrics: float
 
 class PredictionResult(BaseModel):
     hydration_status: Literal['Hydrated', 'Slightly Dehydrated', 'Dehydrated']
