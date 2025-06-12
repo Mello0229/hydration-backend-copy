@@ -137,6 +137,7 @@ async def get_latest_hydration(user=Depends(require_athlete)):
 
     return {
         "hydration_status": prediction["hydration_status"],
+        "hydration_percent": prediction["hydration_percent"],
         "heart_rate": vitals["heart_rate"],
         "body_temperature": vitals["body_temperature"],
         "skin_conductance": vitals["skin_conductance"],

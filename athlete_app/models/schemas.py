@@ -35,7 +35,6 @@ class AthleteAlertsResponse(BaseModel):
     alerts: list[Alert]
 
 class SensorData(BaseModel):
-    id: str
     hydration_level: int
     heart_rate: float
     body_temperature: float
