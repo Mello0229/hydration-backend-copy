@@ -129,8 +129,8 @@ async def receive_raw_schema(data: RawSensorInput, user=Depends(require_athlete)
 
 @router.get("/hydration/status")
 async def get_latest_hydration(user=Depends(require_athlete)):
-    prediction = await db.predictions.find_one({"user": user["username"]}, sort=[("timestamp", -1)])
-    vitals = await db.sensor_data.find_one({"user": user["username"]}, sort=[("timestamp", -1)])
+    prediction = await db.predictions.find_one({"user": user["email"]}, sort=[("timestamp", -1)])
+    vitals = await db.sensor_data.find_one({"user": user["email"]}, sort=[("timestamp", -1)])
 
     if not prediction or not vitals:
         raise HTTPException(status_code=404, detail="No hydration data found")
