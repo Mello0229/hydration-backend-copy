@@ -158,24 +158,63 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
 #     await db.alerts.insert_one(alert)
 #     return jsonable_encoder({"status": "inserted", "alert": alert})
 
-async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
+# athlete_app/api/routes/alerts.py
+
+async def insert_prediction_alert(user: dict, hydration_label: str, hydration_percent: int, source: str = "ml_model"):
     if hydration_percent >= 85:
-        return  # No alert needed
+        return  # skip if hydrated
+
+    athlete_id = user["username"]
+    status = get_status_label(hydration_percent)
+
+    # get last hydration status
+    latest_preds = await db.predictions.find(
+        {"user": user["email"]}
+    ).sort("timestamp", -1).to_list(length=2)
+
+    last_status = None
+    if len(latest_preds) > 1:
+        prev = latest_preds[1]
+        last_status = prev.get("hydration_status")
+
+    is_changed = last_status != status
 
     alert_data = get_hydration_alert_details(hydration_percent)
 
-    alert = {
-        "athlete_id": user["username"],               # ✅ Must be username
-        "alert_type": alert_data["type"],             # ✅ Consistent naming
+    alert_doc = {
+        "athlete_id": athlete_id,
+        "alert_type": alert_data["type"],
         "title": alert_data["title"],
         "description": alert_data["description"],
         "hydration_level": hydration_percent,
+        "hydration_status": status,
+        "status_change": is_changed,
+        "source": source,
         "timestamp": datetime.utcnow(),
-        "source": "ml_model",
-        "coach_message": get_coach_summary(hydration_percent)
+        "status": "active",
+        "coach_message": get_coach_summary(hydration_percent) if is_changed else None
     }
 
-    await db.alerts.insert_one(alert)
+    await db.alerts.insert_one(alert_doc)
+
+# async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
+#     if hydration_percent >= 85:
+#         return  # No alert needed
+
+#     alert_data = get_hydration_alert_details(hydration_percent)
+
+#     alert = {
+#         "athlete_id": user["username"],               # ✅ Must be username
+#         "alert_type": alert_data["type"],             # ✅ Consistent naming
+#         "title": alert_data["title"],
+#         "description": alert_data["description"],
+#         "hydration_level": hydration_percent,
+#         "timestamp": datetime.utcnow(),
+#         "source": "ml_model",
+#         "coach_message": get_coach_summary(hydration_percent)
+#     }
+
+#     await db.alerts.insert_one(alert)
 
 async def insert_prediction_based_alert(athlete_id: str, hydration_level: float, source: str = "ml_model"):
     status = get_status_label(hydration_level)
