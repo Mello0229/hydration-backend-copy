@@ -44,7 +44,7 @@ def get_hydration_alert_details(hydration_level: int):
             )
         }
 
-@router.get("/notifications/alerts")
+@router.get("/alerts")
 async def get_athlete_alerts(user=Depends(require_athlete)):
     cursor = db.alerts.find({"athlete_id": user["username"]}).sort("timestamp", -1)
 
