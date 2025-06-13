@@ -52,8 +52,8 @@ async def get_alerts(coach=Depends(get_current_coach)):
     # cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
         # ✅ Only show alerts when hydration status actually changed
     cursor = db.alerts.find({
-        "athlete_id": {"$in": athlete_usernames},
-        "status_change": True
+    "username": {"$in": athlete_usernames},
+    "status_change": True
     }).sort("timestamp", -1)
 
     alerts = []
@@ -64,9 +64,8 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc.setdefault("source", None)
 
         # Attach athlete full name from db.athletes
-        athlete_username = doc.get("athlete_id")
-        # doc["athlete_name"] = username_to_name.get(athlete_username, athlete_username)  # fallback
-        doc["athlete_name"] = username_to_name.get(doc["athlete_id"], "Unknown")
+        athlete_username = doc.get("username")  # pull from alert.username
+        doc["athlete_name"] = username_to_name.get(athlete_username, "Unknown")
 
         alerts.append(doc)
 
@@ -75,13 +74,13 @@ async def get_alerts(coach=Depends(get_current_coach)):
 @router.get("/{athlete_id}", response_model=list[Alert])
 async def get_alerts_by_athlete(athlete_id: str, coach=Depends(get_current_coach)):
     # 🔍 Return all alerts for a single athlete
-    cursor = db.alerts.find({"athlete_id": athlete_id}).sort("timestamp", -1)
+    cursor = db.alerts.find({"username": athlete_id}).sort("timestamp", -1)
     alerts = []
     async for doc in cursor:
         doc["id"] = str(doc.pop("_id"))
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
-        doc.setdefault("source", None)
+        doc.setdefault("source", None)  
         alerts.append(doc)
     return alerts
 

@@ -235,7 +235,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
         }}
     )
 
-    await insert_auto_hydration_alert(user, label, hydration_percent)
+    await insert_prediction_based_alert(user["email"], hydration_percent, source="ml_model")
 
 @router.post("/raw-receive")
 async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
