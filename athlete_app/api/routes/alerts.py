@@ -44,10 +44,16 @@ def get_hydration_alert_details(hydration_level: int):
             )
         }
 
-@router.get("/alerts")
+@router.get("/notifications/alerts")
 async def get_athlete_alerts(user=Depends(require_athlete)):
-    alerts = db.alerts.find({"athlete_id": user["username"]})
-    return [doc async for doc in alerts]
+    cursor = db.alerts.find({"athlete_id": user["username"]}).sort("timestamp", -1)
+
+    result = []
+    async for doc in cursor:
+        doc["id"] = str(doc.pop("_id"))  # convert ObjectId to string
+        result.append(doc)
+
+    return result
 
 # @router.post("/alerts/hydration")
 # async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
@@ -85,25 +91,25 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
 
 #     return response
 
-@router.post("/alerts/hydration")
-async def create_hydration_alert(data: HydrationAlertInput, user=Depends(require_athlete)):
-    hydration_level = data.hydration_level
-    alert_data = get_hydration_alert_details(hydration_level)
+# @router.post("/alerts/hydration")
+# async def create_hydration_alert(data: HydrationAlertInput, user=Depends(require_athlete)):
+#     hydration_level = data.hydration_level
+#     alert_data = get_hydration_alert_details(hydration_level)
 
-    alert_doc = {
-        "athlete_id": user["username"],               # ✅ Use current user
-        "alert_type": alert_data["type"],
-        "title": alert_data["title"],
-        "description": alert_data["description"],
-        "timestamp": datetime.utcnow(),
-        "status": "active",
-        "hydration_level": hydration_level,
-        "source": "athlete",
-        "coach_message": get_coach_summary(hydration_level)
-    }
+#     alert_doc = {
+#         "athlete_id": user["username"],               # ✅ Use current user
+#         "alert_type": alert_data["type"],
+#         "title": alert_data["title"],
+#         "description": alert_data["description"],
+#         "timestamp": datetime.utcnow(),
+#         "status": "active",
+#         "hydration_level": hydration_level,
+#         "source": "athlete",
+#         "coach_message": get_coach_summary(hydration_level)
+#     }
 
-    await db.alerts.insert_one(alert_doc)
-    return {"message": "Hydration alert created"}
+#     await db.alerts.insert_one(alert_doc)
+#     return {"message": "Hydration alert created"}
 
 async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
     hydration_level = payload.hydration_level
@@ -216,36 +222,36 @@ async def insert_prediction_alert(user: dict, hydration_label: str, hydration_pe
 
 #     await db.alerts.insert_one(alert)
 
-async def insert_prediction_based_alert(athlete_id: str, hydration_level: float, source: str = "ml_model"):
-    status = get_status_label(hydration_level)
+# async def insert_prediction_based_alert(athlete_id: str, hydration_level: float, source: str = "ml_model"):
+#     status = get_status_label(hydration_level)
 
-    # 🔍 Get last hydration status from db.predictions
-    latest_pred = await db.predictions.find(
-        {"athlete_id": athlete_id}
-    ).sort("timestamp", -1).to_list(length=2)
+#     # 🔍 Get last hydration status from db.predictions
+#     latest_pred = await db.predictions.find(
+#         {"athlete_id": athlete_id}
+#     ).sort("timestamp", -1).to_list(length=2)
 
-    last_status = None
-    if len(latest_pred) > 1:
-        prev_level = latest_pred[1].get("hydration_level")
-        if prev_level is not None:
-            last_status = get_status_label(prev_level)
+#     last_status = None
+#     if len(latest_pred) > 1:
+#         prev_level = latest_pred[1].get("hydration_level")
+#         if prev_level is not None:
+#             last_status = get_status_label(prev_level)
 
-    is_status_change = status != last_status
+#     is_status_change = status != last_status
 
-    alert_data = get_hydration_alert_details(hydration_level)
+#     alert_data = get_hydration_alert_details(hydration_level)
 
-    alert_doc = {
-        "athlete_id": athlete_id,
-        "alert_type": alert_data["type"],
-        "title": alert_data["title"],
-        "description": alert_data["description"],
-        "coach_message": format_status_for_coach(status) if is_status_change else None,
-        "hydration_status": status,
-        "hydration_level": hydration_level,
-        "timestamp": datetime.utcnow(),
-        "source": source,
-        "status": "active",
-        "status_change": is_status_change
-    }
+#     alert_doc = {
+#         "athlete_id": athlete_id,
+#         "alert_type": alert_data["type"],
+#         "title": alert_data["title"],
+#         "description": alert_data["description"],
+#         "coach_message": format_status_for_coach(status) if is_status_change else None,
+#         "hydration_status": status,
+#         "hydration_level": hydration_level,
+#         "timestamp": datetime.utcnow(),
+#         "source": source,
+#         "status": "active",
+#         "status_change": is_status_change
+#     }
 
-    await db.alerts.insert_one(alert_doc)
+#     await db.alerts.insert_one(alert_doc)
