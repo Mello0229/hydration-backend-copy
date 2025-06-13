@@ -24,6 +24,18 @@ class Athlete(BaseModel):
     status: str
     # alerts: list = []
 
+# class Alert(BaseModel):
+#     id: str
+#     athlete_id: str
+#     alert_type: str
+#     title: Optional[str] = None
+#     description: str
+#     timestamp: datetime
+#     status: Optional[str] = "active"
+#     hydration_level: Optional[float] = None
+#     source: Optional[str] = None
+#     coach_message: Optional[str] = None
+
 class Alert(BaseModel):
     id: str
     athlete_id: str
@@ -34,6 +46,10 @@ class Alert(BaseModel):
     status: Optional[str] = "active"
     hydration_level: Optional[float] = None
     source: Optional[str] = None
+
+    # ✅ Add these:
+    hydration_status: Optional[str] = None
+    status_change: Optional[bool] = False
     coach_message: Optional[str] = None
 
 class CoachProfile(BaseModel):

@@ -19,6 +19,18 @@ class AlertType(str, Enum):
 class HydrationAlertInput(BaseModel):
     hydration_level: float
 
+# class Alert(BaseModel):
+#     id: str
+#     athlete_id: Optional[str] = None
+#     alert_type: AlertType
+#     title: Optional[str]
+#     description: str
+#     timestamp: datetime
+#     status: Optional[str] = "active"
+#     hydration_level: Optional[float] = None
+#     source: Optional[str] = "athlete"
+#     coach_message: Optional[str] = None
+
 class Alert(BaseModel):
     id: str
     athlete_id: Optional[str] = None
@@ -29,6 +41,10 @@ class Alert(BaseModel):
     status: Optional[str] = "active"
     hydration_level: Optional[float] = None
     source: Optional[str] = "athlete"
+
+    # ✅ Add these:
+    hydration_status: Optional[str] = None
+    status_change: Optional[bool] = False
     coach_message: Optional[str] = None
 
 class AthleteAlertsResponse(BaseModel):

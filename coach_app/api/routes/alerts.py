@@ -49,7 +49,12 @@ async def get_alerts(coach=Depends(get_current_coach)):
         return []
 
     # Step 3: Fetch alerts from those athletes
-    cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
+    # cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
+        # ✅ Only show alerts when hydration status actually changed
+    cursor = db.alerts.find({
+        "athlete_id": {"$in": athlete_usernames},
+        "status_change": True
+    }).sort("timestamp", -1)
 
     alerts = []
     async for doc in cursor:
