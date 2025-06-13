@@ -74,13 +74,13 @@ async def get_alerts(coach=Depends(get_current_coach)):
 @router.get("/{athlete_id}", response_model=list[Alert])
 async def get_alerts_by_athlete(athlete_id: str, coach=Depends(get_current_coach)):
     # 🔍 Return all alerts for a single athlete
-    cursor = db.alerts.find({"username": athlete_id}).sort("timestamp", -1)
+    cursor = db.alerts.find({"athlete_id": athlete_id}).sort("timestamp", -1)
     alerts = []
     async for doc in cursor:
         doc["id"] = str(doc.pop("_id"))
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
-        doc.setdefault("source", None)  
+        doc.setdefault("source", None)
         alerts.append(doc)
     return alerts
 

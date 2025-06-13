@@ -9,13 +9,13 @@ from shared.utils import get_status_label, format_status_for_coach
 
 router = APIRouter()
 
-# def get_coach_summary(hydration_level: float) -> str:
-#     if hydration_level < 70:
-#         return f"Dehydrated at {hydration_level:.0f}%"
-#     elif hydration_level < 85:
-#         return f"Hydration dropped to {hydration_level:.0f}%"
-#     else:
-#         return f"Hydrated at {hydration_level:.0f}%"
+def get_coach_summary(hydration_level: float) -> str:
+    if hydration_level < 70:
+        return f"Dehydrated at {hydration_level:.0f}%"
+    elif hydration_level < 85:
+        return f"Hydration dropped to {hydration_level:.0f}%"
+    else:
+        return f"Hydrated at {hydration_level:.0f}%"
 
 
 def get_hydration_alert_details(hydration_level: int):
@@ -30,7 +30,7 @@ def get_hydration_alert_details(hydration_level: int):
     elif hydration_level < 85:
         return {
             "type": "WARNING",
-            "title": "Hydration Warning",   
+            "title": "Hydration Warning",
             "description": (
                 "You are slightly dehydrated. Drink 250mL of water to maintain optimal performance."
             )
@@ -46,7 +46,7 @@ def get_hydration_alert_details(hydration_level: int):
 
 @router.get("/alerts")
 async def get_athlete_alerts(user=Depends(require_athlete)):
-    alerts = db.alerts.find({"athlete_id": user["email"]})
+    alerts = db.alerts.find({"athlete_id": user["username"]})
     return [doc async for doc in alerts]
 
 # @router.post("/alerts/hydration")
@@ -87,28 +87,23 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
 
 @router.post("/alerts/hydration")
 async def create_hydration_alert(data: HydrationAlertInput, user=Depends(require_athlete)):
-    await insert_prediction_based_alert(user["email"], data.hydration_level, source="manual")
-    return {"message": "Hydration alert inserted (if status changed)"}
+    hydration_level = data.hydration_level
+    alert_data = get_hydration_alert_details(hydration_level)
 
-# @router.post("/alerts/hydration")
-# async def create_hydration_alert(data: HydrationAlertInput, user=Depends(require_athlete)):
-#     hydration_level = data.hydration_level
-#     alert_data = get_hydration_alert_details(hydration_level)
+    alert_doc = {
+        "athlete_id": user["username"],               # ✅ Use current user
+        "alert_type": alert_data["type"],
+        "title": alert_data["title"],
+        "description": alert_data["description"],
+        "timestamp": datetime.utcnow(),
+        "status": "active",
+        "hydration_level": hydration_level,
+        "source": "athlete",
+        "coach_message": get_coach_summary(hydration_level)
+    }
 
-#     alert_doc = {
-#         "athlete_id": user["username"],               # ✅ Use current user
-#         "alert_type": alert_data["type"],
-#         "title": alert_data["title"],
-#         "description": alert_data["description"],
-#         "timestamp": datetime.utcnow(),
-#         "status": "active",
-#         "hydration_level": hydration_level,
-#         "source": "athlete",
-#         "coach_message": get_coach_summary(hydration_level)
-#     }
-
-#     await db.alerts.insert_one(alert_doc)
-#     return {"message": "Hydration alert created"}
+    await db.alerts.insert_one(alert_doc)
+    return {"message": "Hydration alert created"}
 
 async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(require_athlete)):
     hydration_level = payload.hydration_level
@@ -163,39 +158,36 @@ async def insert_hydration_alert(payload: HydrationAlertInput, user=Depends(requ
 #     await db.alerts.insert_one(alert)
 #     return jsonable_encoder({"status": "inserted", "alert": alert})
 
-# async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
-#     if hydration_percent >= 85:
-#         return  # No alert needed
+async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
+    if hydration_percent >= 85:
+        return  # No alert needed
 
-#     alert_data = get_hydration_alert_details(hydration_percent)
+    alert_data = get_hydration_alert_details(hydration_percent)
 
-#     alert = {
-#         "athlete_id": user["username"],               # ✅ Must be username
-#         "alert_type": alert_data["type"],             # ✅ Consistent naming
-#         "title": alert_data["title"],
-#         "description": alert_data["description"],
-#         "hydration_level": hydration_percent,
-#         "timestamp": datetime.utcnow(),
-#         "source": "ml_model",
-#         "coach_message": get_coach_summary(hydration_percent)
-#     }
+    alert = {
+        "athlete_id": user["username"],               # ✅ Must be username
+        "alert_type": alert_data["type"],             # ✅ Consistent naming
+        "title": alert_data["title"],
+        "description": alert_data["description"],
+        "hydration_level": hydration_percent,
+        "timestamp": datetime.utcnow(),
+        "source": "ml_model",
+        "coach_message": get_coach_summary(hydration_percent)
+    }
 
-#     await db.alerts.insert_one(alert)
+    await db.alerts.insert_one(alert)
 
-async def insert_prediction_based_alert(user: dict, hydration_level: float, source: str = "ml_model"):
-    athlete_id = user["email"]
-    athlete_name = user.get("name", "Unknown")  # fallback if name isn't provided
-
+async def insert_prediction_based_alert(athlete_id: str, hydration_level: float, source: str = "ml_model"):
     status = get_status_label(hydration_level)
 
     # 🔍 Get last hydration status from db.predictions
     latest_pred = await db.predictions.find(
-        {"user": user["email"]}
+        {"athlete_id": athlete_id}
     ).sort("timestamp", -1).to_list(length=2)
 
     last_status = None
     if len(latest_pred) > 1:
-        prev_level = latest_pred[1].get("hydration_percent")
+        prev_level = latest_pred[1].get("hydration_level")
         if prev_level is not None:
             last_status = get_status_label(prev_level)
 
@@ -205,7 +197,6 @@ async def insert_prediction_based_alert(user: dict, hydration_level: float, sour
 
     alert_doc = {
         "athlete_id": athlete_id,
-        "username": user.get("username"),
         "alert_type": alert_data["type"],
         "title": alert_data["title"],
         "description": alert_data["description"],
