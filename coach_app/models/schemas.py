@@ -46,8 +46,7 @@ class Alert(BaseModel):
     status: Optional[str] = "active"
     hydration_level: Optional[float] = None
     source: Optional[str] = None
-
-    # ✅ Add these:
+    athlete_name: Optional[str] = None
     hydration_status: Optional[str] = None
     status_change: Optional[bool] = False
     coach_message: Optional[str] = None

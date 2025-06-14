@@ -4,6 +4,7 @@ from coach_app.models.schemas import Alert
 from shared.database import db
 from bson import ObjectId
 from typing import List
+from datetime import timezone
 
 router = APIRouter()
 
@@ -33,14 +34,14 @@ router = APIRouter()
 async def get_alerts(coach=Depends(get_current_coach)):
     coach_email = coach["email"]
 
-    # Step 1: Get coach profile
+    # 1. Coach profile lookup
     coach_profile = await db.coach_profile.find_one({"email": coach_email})
     if not coach_profile or "name" not in coach_profile:
         raise HTTPException(status_code=400, detail="Coach profile missing or incomplete")
 
     coach_name = coach_profile["name"]
 
-    # Step 2: Get all athletes with this coach_name
+    # 2. Get athletes under this coach
     athlete_docs = await db.athletes.find({"coach_name": coach_name}).to_list(length=None)
     username_to_name = {a["username"]: a["name"] for a in athlete_docs}
     athlete_usernames = list(username_to_name.keys())
@@ -48,24 +49,28 @@ async def get_alerts(coach=Depends(get_current_coach)):
     if not athlete_usernames:
         return []
 
-    # Step 3: Fetch alerts from those athletes
-    # cursor = db.alerts.find({"athlete_id": {"$in": athlete_usernames}}).sort("timestamp", -1)
-        # ✅ Only show alerts when hydration status actually changed
+    # 3. Fetch alerts for those athletes where status actually changed
     cursor = db.alerts.find({
-    "athlete_id": {"$in": athlete_usernames},
-    "status_change": True
+        "athlete_id": {"$in": athlete_usernames},
+        "status_change": True
     }).sort("timestamp", -1)
 
     alerts = []
     async for doc in cursor:
         doc["id"] = str(doc.pop("_id"))
+
+        # Ensure ISO 8601 format with 'Z'
+        if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
+            doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat() + "Z"
+
+        # Fill required frontend fields
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
         doc.setdefault("source", None)
+        doc.setdefault("coach_message", "")
 
-        # Attach athlete full name from db.athletes
-        athlete_username = doc.get("username")  # pull from alert.username
-        doc["athlete_name"] = username_to_name.get(athlete_username, "Unknown")
+        athlete_id = doc.get("athlete_id")
+        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
         alerts.append(doc)
 

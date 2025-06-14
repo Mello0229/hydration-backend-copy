@@ -21,7 +21,7 @@ def get_coach_summary(hydration_level: float) -> str:
 def get_hydration_alert_details(hydration_level: int):
     if hydration_level < 70:
         return {
-            "type": "CRITICAL",
+            "type": "DEHYDRATED",
             "title": "Critical Hydration Alert",
             "description": (
                 "You are in a dehydrated state! Immediate hydration is recommended to prevent fatigue and performance decline."
@@ -29,7 +29,7 @@ def get_hydration_alert_details(hydration_level: int):
         }
     elif hydration_level < 85:
         return {
-            "type": "WARNING",
+            "type": "SLIGHTLY DEHYDRATED",
             "title": "Hydration Warning",
             "description": (
                 "You are slightly dehydrated. Drink 250mL of water to maintain optimal performance."
@@ -37,7 +37,7 @@ def get_hydration_alert_details(hydration_level: int):
         }
     else:
         return {
-            "type": "REMINDER",
+            "type": "HYDRATED",
             "title": "Daily Hydration Goal Reminder",
             "description": (
                 "You’ve consumed 1.5L of water today. Keep going!\nYour daily hydration goal is 2.5L."

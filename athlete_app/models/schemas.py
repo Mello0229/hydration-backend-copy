@@ -12,9 +12,9 @@ class HydrationStatus(str, Enum):
     DEHYDRATED = "Dehydrated"
 
 class AlertType(str, Enum):
-    REMINDER = "REMINDER"
-    WARNING = "WARNING"
-    CRITICAL = "CRITICAL"
+    REMINDER = "HYDRATED"
+    WARNING = "SLIGHTLY DEHYDRATED"
+    CRITICAL = "DEHYDRATED"
 
 class HydrationAlertInput(BaseModel):
     hydration_level: float
