@@ -52,38 +52,22 @@ async def get_alerts(coach=Depends(get_current_coach)):
     # 3. Fetch alerts for those athletes where status actually changed
     cursor = db.alerts.find({
         "athlete_id": {"$in": athlete_usernames},
-        # "status_change": True
+        "status_change": True
     }).sort("timestamp", -1)
 
     alerts = []
     async for doc in cursor:
-        # doc["id"] = str(doc.pop("_id"))
-
-        # # Ensure ISO 8601 format with 'Z'
-        # if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
-        #     doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat() + "Z"
-
-        # # Fill required frontend fields
-        # doc.setdefault("status", "active")
-        # doc.setdefault("hydration_level", None)
-        # doc.setdefault("source", None)
-        # doc.setdefault("coach_message", "")
-
-        # athlete_id = doc.get("athlete_id")
-        # doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
-
         doc["id"] = str(doc.pop("_id"))
 
-        # Ensure timestamp has Z-format
+        # Ensure ISO 8601 format with 'Z'
         if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
             doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat() + "Z"
 
+        # Fill required frontend fields
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
-        doc.setdefault("source", "unknown")
-        doc.setdefault("coach_message", "No message")
-        doc.setdefault("hydration_status", "")
-        doc.setdefault("status_change", False)
+        doc.setdefault("source", None)
+        doc.setdefault("coach_message", "")
 
         athlete_id = doc.get("athlete_id")
         doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
