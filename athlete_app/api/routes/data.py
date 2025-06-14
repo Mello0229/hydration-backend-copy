@@ -1,6 +1,6 @@
 # athlete-app/api/routes/data.py
 from fastapi import APIRouter, Depends, HTTPException, Query
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi.responses import JSONResponse
 from typing import List
 import pandas as pd
