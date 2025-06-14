@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from datetime import datetime
+from datetime import datetime, timezone
 from athlete_app.api.deps import require_athlete
 from athlete_app.core.config import db
 from fastapi.encoders import jsonable_encoder
@@ -50,7 +50,8 @@ async def get_athlete_alerts(user=Depends(require_athlete)):
 
     result = []
     async for doc in cursor:
-        doc["id"] = str(doc.pop("_id"))  # convert ObjectId to string
+        doc["id"] = str(doc.pop("_id"))
+        doc["timestamp"] = doc["timestamp"].isoformat() + "Z"  # ✅ Append 'Z' for UTC
         result.append(doc)
 
     return result
@@ -186,7 +187,7 @@ async def insert_prediction_alert(user: dict, hydration_label: str, hydration_pe
     is_changed = last_status != status
 
     alert_data = get_hydration_alert_details(hydration_percent)
-
+    
     alert_doc = {
         "athlete_id": athlete_id,
         "alert_type": alert_data["type"],
@@ -196,10 +197,10 @@ async def insert_prediction_alert(user: dict, hydration_label: str, hydration_pe
         "hydration_status": status,
         "status_change": is_changed,
         "source": source,
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc),
         "status": "active",
         "coach_message": get_coach_summary(hydration_percent) if is_changed else None
-    }
+    }   
 
     await db.alerts.insert_one(alert_doc)
 

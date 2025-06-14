@@ -197,7 +197,7 @@ def map_label_to_percentage(label: str) -> int:
 
 async def save_prediction(input_data: dict, user: dict, label: str, combined: float):
     hydration_percent = map_label_to_percentage(label)
-    timestamp = datetime.utcnow()
+    timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
     await db.sensor_data.insert_one({
         "user": user["email"],
