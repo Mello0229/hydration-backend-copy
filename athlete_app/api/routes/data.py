@@ -48,15 +48,15 @@ async def receive_data(data: SensorData, user=Depends(require_athlete)):
     await save_prediction(input_data, user, hydration_label, combined)
 
     if combined < 70:
-        alert_type = "CRITICAL"
+        alert_type = "DEHYDRATED"
         title = "Critical Hydration Alert"
         description = f"Dehydrated at {round(combined)}%"
     elif combined < 85:
-        alert_type = "WARNING"
+        alert_type = "SLIGHTLY DEHYDRATED"
         title = "Hydration Dropped"
         description = f"Hydration dropped to {round(combined)}%"
     else:
-        alert_type = "REMINDER"
+        alert_type = "HYDRATED"
         title = "Hydration OK"
         description = f"Hydrated at {round(combined)}%"
 
