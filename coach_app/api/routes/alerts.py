@@ -115,6 +115,8 @@ async def get_alerts(coach=Depends(get_current_coach)):
     print("Coach:", coach_email)
     print("Athlete USERNAMES for alerts:", athlete_usernames)
 
+    print("Fetched alerts:", len(alerts))
+
     # ✅ 4. Query alerts by athlete usernames
     cursor = db.alerts.find({
         "athlete_id": {"$in": athlete_usernames},
@@ -125,21 +127,21 @@ async def get_alerts(coach=Depends(get_current_coach)):
     async for doc in cursor:
         doc["id"] = str(doc.pop("_id"))
 
-        if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
-            doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat()
+    if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
+        doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat()
 
-        doc.setdefault("status", "active")
-        doc.setdefault("hydration_level", None)
-        doc.setdefault("source", "unknown")
-        doc.setdefault("coach_message", "")
-        doc.setdefault("hydration_status", "")
-        doc.setdefault("alert_type", "")
-        doc["status_change"] = doc.get("status_change", False)
+    doc.setdefault("status", "active")
+    doc.setdefault("hydration_level", None)
+    doc.setdefault("source", "unknown")
+    doc.setdefault("coach_message", "")
+    doc.setdefault("hydration_status", "")
+    doc.setdefault("alert_type", "")
+    doc["status_change"] = doc.get("status_change", False)
 
-        athlete_id = doc.get("athlete_id")
-        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
+    athlete_id = doc.get("athlete_id", "").lower()
+    doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
-        alerts.append(doc)
+    alerts.append(doc)
 
     return alerts
 
