@@ -9,14 +9,21 @@ from shared.utils import get_status_label, format_status_for_coach
 
 router = APIRouter()
 
+# def get_coach_summary(hydration_level: float) -> str:
+#     if hydration_level < 70:
+#         return f"Dehydrated at {hydration_level:.0f}%"
+#     elif hydration_level < 85:
+#         return f"Hydration dropped to {hydration_level:.0f}%"
+#     else:
+#         return f"Hydrated at {hydration_level:.0f}%"
+
 def get_coach_summary(hydration_level: float) -> str:
     if hydration_level < 70:
-        return f"Dehydrated at {hydration_level:.0f}%"
+        return f"⚠️ The athlete is in a dehydrated state with hydration at {hydration_level:.0f}%. Immediate attention is recommended."
     elif hydration_level < 85:
-        return f"Hydration dropped to {hydration_level:.0f}%"
+        return f"🔔 The athlete's hydration level has dropped to {hydration_level:.0f}%. Encourage water intake soon."
     else:
-        return f"Hydrated at {hydration_level:.0f}%"
-
+        return f"✅ The athlete is well-hydrated at {hydration_level:.0f}%. No immediate action needed."
 
 def get_hydration_alert_details(hydration_level: int):
     if hydration_level < 70:
