@@ -42,18 +42,18 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
     # ✅ 2. Get athletes under coach
     athlete_docs = await db.athletes.find({"coach_name": coach_name}).to_list(length=None)
-    # username_to_name = {a["username"]: a["name"] for a in athlete_docs}
-    # athlete_usernames = list(username_to_name.keys())
+    username_to_name = {a["username"]: a["name"] for a in athlete_docs}
+    athlete_usernames = list(username_to_name.keys())
     
-    email_to_name = {a["email"]: a["name"] for a in athlete_docs}
-    athlete_emails = list(email_to_name.keys())
+    # email_to_name = {a["email"]: a["name"] for a in athlete_docs}
+    # athlete_emails = list(email_to_name.keys())
 
-    if not athlete_emails:
+    if not athlete_usernames:
         return []
 
     # ✅ 3. Fetch alerts for those athletes (no filter to ensure it returns)
     cursor = db.alerts.find({
-        "athlete_id": {"$in": athlete_emails}
+        "athlete_id": {"$in": athlete_usernames}
         # Optional: `"status_change": True` if you want filtering again later
     }).sort("timestamp", -1)
 
@@ -71,13 +71,13 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc.setdefault("source", "unknown")
         doc.setdefault("coach_message", "")
         doc.setdefault("hydration_status", "")
-        doc.setdefault("alert_type", None)
-        if "status_change" not in doc:
-            doc["status_change"] = False
+        doc.setdefault("alert_type", "")
+    if "status_change" not in doc:
+        doc["status_change"] = False
 
         # ✅ Attach athlete name
         athlete_id = doc.get("athlete_id")
-        doc["athlete_name"] = email_to_name.get(athlete_id, "Unknown")
+        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
         alerts.append(doc)
 
