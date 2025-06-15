@@ -63,14 +63,7 @@ router = APIRouter()
 
 #     return alerts
 
-
-
-# @router.get("/", response_model=List[Alert])
-# async def get_alerts(coach=Depends(get_current_coach)):
-#     coach_email = coach["email"]
-
-#     # ✅ 1. Get coach profile
-#     coach_profile = await db.coach_profile.find_one({"email": coach_email})@router.get("/", response_model=List[Alert])
+@router.get("/", response_model=List[Alert])
 async def get_alerts(coach=Depends(get_current_coach)):
     coach_email = coach["email"]
 
@@ -96,7 +89,7 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
     print("Coach:", coach_email)
     print("Athlete USERNAMES for alerts:", athlete_usernames)
-    
+
     # ✅ 4. Query alerts by athlete usernames
     cursor = db.alerts.find({
         "athlete_id": {"$in": athlete_usernames},
@@ -125,6 +118,12 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
     return alerts
 
+# @router.get("/", response_model=List[Alert])
+# async def get_alerts(coach=Depends(get_current_coach)):
+#     coach_email = coach["email"]
+
+#     # ✅ 1. Get coach profile
+#     coach_profile = await db.coach_profile.find_one({"email": coach_email})
 #     if not coach_profile or "name" not in coach_profile:
 #         raise HTTPException(status_code=400, detail="Coach profile missing or incomplete")
 #     coach_name = coach_profile["name"]
