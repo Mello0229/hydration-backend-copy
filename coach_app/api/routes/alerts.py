@@ -82,40 +82,22 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
     # ✅ 3. Convert emails → usernames (to match alert's athlete_id field)
     user_docs = await db.users.find({"email": {"$in": athlete_emails}}).to_list(length=None)
-#     email_to_username = {
-#     u["email"]: u["username"]
-#     for u in user_docs
-#     if "email" in u and "username" in u
-# }
-
-#     username_to_name = {
-#     u["username"]: u["name"]
-#     for u in user_docs
-#     if "username" in u and "name" in u
-#     }   
-
-    # Normalize all usernames to lowercase
     email_to_username = {
-        u["email"]: u["username"].lower()
-        for u in user_docs
-        if "email" in u and "username" in u
+    u["email"]: u["username"]
+    for u in user_docs
+    if "email" in u and "username" in u
     }
 
     username_to_name = {
-        u["username"].lower(): u["name"]
-        for u in user_docs
-        if "username" in u and "name" in u
-    }
+    u["username"]: u["name"]
+    for u in user_docs
+    if "username" in u and "name" in u
+    }   
 
     athlete_usernames = list(email_to_username.values())
 
-    print("username_to_name:", username_to_name)
-    print("alert athlete_id:", doc.get("athlete_id"))
-
     print("Coach:", coach_email)
     print("Athlete USERNAMES for alerts:", athlete_usernames)
-
-    print("Fetched alerts:", len(alerts))
 
     # ✅ 4. Query alerts by athlete usernames
     cursor = db.alerts.find({
@@ -127,21 +109,21 @@ async def get_alerts(coach=Depends(get_current_coach)):
     async for doc in cursor:
         doc["id"] = str(doc.pop("_id"))
 
-    if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
-        doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat()
+        if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
+            doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat()
 
-    doc.setdefault("status", "active")
-    doc.setdefault("hydration_level", None)
-    doc.setdefault("source", "unknown")
-    doc.setdefault("coach_message", "")
-    doc.setdefault("hydration_status", "")
-    doc.setdefault("alert_type", "")
-    doc["status_change"] = doc.get("status_change", False)
+        doc.setdefault("status", "active")
+        doc.setdefault("hydration_level", None)
+        doc.setdefault("source", "unknown")
+        doc.setdefault("coach_message", "")
+        doc.setdefault("hydration_status", "")
+        doc.setdefault("alert_type", "")
+        doc["status_change"] = doc.get("status_change", False)
 
-    athlete_id = doc.get("athlete_id", "").lower()
-    doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
+        athlete_id = doc.get("athlete_id")
+        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
-    alerts.append(doc)
+        alerts.append(doc)
 
     return alerts
 
