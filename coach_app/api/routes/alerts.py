@@ -21,20 +21,24 @@ async def get_alerts(coach=Depends(get_current_coach)):
     # ✅ 2. Get athletes under coach
     athlete_docs = await db.athletes.find({"assigned_by": coach_email}).to_list(length=None)
     
-    email_to_name = {a["email"]: a["name"] for a in athlete_docs}
-    athlete_emails = list(email_to_name.keys())
+    # email_to_name = {a["email"]: a["name"] for a in athlete_docs}
+    # athlete_emails = list(email_to_name.keys())
+
+    username_to_name = {a["username"]: a["name"] for a in athlete_docs}
+    athlete_usernames = list(username_to_name.keys())
+
 
     print("Coach:", coach_email)
-    print("Athlete emails:", athlete_emails)
-    print("Querying alerts with athlete_id IN:", athlete_emails)
+    print("Athlete emails:", athlete_usernames)
+    print("Querying alerts with athlete_id IN:", athlete_usernames)
 
-    if not athlete_emails:
+    if not athlete_usernames:
         return []
 
     # ✅ 3. Fetch alerts for those athletes
     cursor = db.alerts.find({
-        "athlete_id": {"$in": athlete_emails},
-        # "status_change": True
+        "athlete_id": {"$in": athlete_usernames},
+        "status_change": True
     }).sort("timestamp", -1)
 
     alerts = []
@@ -53,7 +57,7 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc["status_change"] = doc.get("status_change", False)
 
         athlete_id = doc.get("athlete_id")
-        doc["athlete_name"] = email_to_name.get(athlete_id, "Unknown")
+        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
         alerts.append(doc)
 
