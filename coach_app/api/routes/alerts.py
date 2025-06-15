@@ -82,8 +82,17 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
     # ✅ 3. Convert emails → usernames (to match alert's athlete_id field)
     user_docs = await db.users.find({"email": {"$in": athlete_emails}}).to_list(length=None)
-    email_to_username = {u["email"]: u["username"] for u in user_docs}
-    username_to_name = {u["username"]: u["name"] for u in user_docs}
+    email_to_username = {
+    u["email"]: u["username"]
+    for u in user_docs
+    if "email" in u and "username" in u
+}
+
+    username_to_name = {
+    u["username"]: u["name"]
+    for u in user_docs
+    if "username" in u and "name" in u
+    }   
 
     athlete_usernames = list(email_to_username.values())
 
