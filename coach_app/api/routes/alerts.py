@@ -110,7 +110,7 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc["id"] = str(doc.pop("_id"))
 
         if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
-            doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat() + "Z"
+            doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat()
 
         doc.setdefault("status", "active")
         doc.setdefault("hydration_level", None)
