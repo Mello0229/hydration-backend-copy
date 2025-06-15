@@ -145,7 +145,6 @@ async def get_latest_hydration(user=Depends(require_athlete)):
         "timestamp": vitals["timestamp"]
     }
 
-
 @router.get("/warnings/prediction")
 async def get_prediction_warnings(sensor: str = Query(None), user=Depends(require_athlete)):
     cursor = db.predictions.find({"user": user["username"]}).sort("timestamp", -1)
