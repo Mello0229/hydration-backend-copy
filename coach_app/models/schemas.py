@@ -50,6 +50,7 @@ class Alert(BaseModel):
     hydration_status: Optional[str] = None
     status_change: Optional[bool] = False
     coach_message: Optional[str] = None
+    coach_name: Optional[str] = None
 
 class CoachProfile(BaseModel):
     name: str      

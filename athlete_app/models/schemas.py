@@ -41,11 +41,10 @@ class Alert(BaseModel):
     status: Optional[str] = "active"
     hydration_level: Optional[float] = None
     source: Optional[str] = "athlete"
-
-    # ✅ Add these:
     hydration_status: Optional[str] = None
     status_change: Optional[bool] = False
     coach_message: Optional[str] = None
+    coach_name: Optional[str] = None
 
 class AthleteAlertsResponse(BaseModel):
     alerts: list[Alert]

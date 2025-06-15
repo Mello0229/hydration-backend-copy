@@ -187,7 +187,11 @@ async def insert_prediction_alert(user: dict, hydration_label: str, hydration_pe
     is_changed = last_status != status
 
     alert_data = get_hydration_alert_details(hydration_percent)
-    
+
+    # 🔍 Get coach name from athletes collection
+    athlete_doc = await db.athletes.find_one({"username": athlete_id})
+    coach_name = athlete_doc.get("assigned_by") if athlete_doc else None
+
     alert_doc = {
         "athlete_id": athlete_id,
         "alert_type": alert_data["type"],
@@ -199,8 +203,9 @@ async def insert_prediction_alert(user: dict, hydration_label: str, hydration_pe
         "source": source,
         "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc),
         "status": "active",
-        "coach_message": get_coach_summary(hydration_percent) if is_changed else None
-    }   
+        "coach_message": get_coach_summary(hydration_percent) if is_changed else None,
+        "coach_name": coach_name  # 🆕 Added coach_name to alert doc
+    }
 
     await db.alerts.insert_one(alert_doc)
 
