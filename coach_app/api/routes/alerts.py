@@ -53,7 +53,8 @@ async def get_alerts(coach=Depends(get_current_coach)):
 
     # ✅ 3. Fetch alerts for those athletes (no filter to ensure it returns)
     cursor = db.alerts.find({
-        "athlete_id": {"$in": athlete_usernames}
+        "athlete_id": {"$in": athlete_usernames},
+        "status_change": True
         # Optional: `"status_change": True` if you want filtering again later
     }).sort("timestamp", -1)
 
@@ -61,25 +62,25 @@ async def get_alerts(coach=Depends(get_current_coach)):
     async for doc in cursor:
         doc["id"] = str(doc.pop("_id"))
 
-        # ✅ Timestamp format with Z suffix
-        if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
-            doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat() + "Z"
+    if "timestamp" in doc and hasattr(doc["timestamp"], "isoformat"):
+        doc["timestamp"] = doc["timestamp"].replace(tzinfo=timezone.utc).isoformat() + "Z"
 
-        # ✅ Defaults to prevent frontend crash
-        doc.setdefault("status", "active")
-        doc.setdefault("hydration_level", None)
-        doc.setdefault("source", "unknown")
-        doc.setdefault("coach_message", "")
-        doc.setdefault("hydration_status", "")
-        doc.setdefault("alert_type", "")
+    doc.setdefault("status", "active")
+    doc.setdefault("hydration_level", None)
+    doc.setdefault("source", "unknown")
+    doc.setdefault("coach_message", "")
+    doc.setdefault("hydration_status", "")
+    doc.setdefault("alert_type", "")
+
+    # FIX: always set, don't filter by it
     if "status_change" not in doc:
         doc["status_change"] = False
 
-        # ✅ Attach athlete name
-        athlete_id = doc.get("athlete_id")
-        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
+    athlete_id = doc.get("athlete_id")
+    doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
-        alerts.append(doc)
+    # ✅ ALWAYS APPEND!
+    alerts.append(doc)
 
     return alerts
 
