@@ -34,7 +34,7 @@ async def get_alerts(coach=Depends(get_current_coach)):
     # ✅ 3. Fetch alerts for those athletes
     cursor = db.alerts.find({
         "athlete_id": {"$in": athlete_emails},
-        "status_change": True
+        # "status_change": True
     }).sort("timestamp", -1)
 
     alerts = []
