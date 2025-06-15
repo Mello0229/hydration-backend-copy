@@ -204,24 +204,24 @@ async def insert_prediction_alert(user: dict, hydration_label: str, hydration_pe
 
     await db.alerts.insert_one(alert_doc)
 
-# async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
-#     if hydration_percent >= 85:
-#         return  # No alert needed
+async def insert_auto_hydration_alert(user: dict, hydration_label: str, hydration_percent: int):
+    if hydration_percent >= 85:
+        return  # No alert needed
 
-#     alert_data = get_hydration_alert_details(hydration_percent)
+    alert_data = get_hydration_alert_details(hydration_percent)
 
-#     alert = {
-#         "athlete_id": user["username"],               # ✅ Must be username
-#         "alert_type": alert_data["type"],             # ✅ Consistent naming
-#         "title": alert_data["title"],
-#         "description": alert_data["description"],
-#         "hydration_level": hydration_percent,
-#         "timestamp": datetime.utcnow(),
-#         "source": "ml_model",
-#         "coach_message": get_coach_summary(hydration_percent)
-#     }
+    alert = {
+        "athlete_id": user["username"],               # ✅ Must be username
+        "alert_type": alert_data["type"],             # ✅ Consistent naming
+        "title": alert_data["title"],
+        "description": alert_data["description"],
+        "hydration_level": hydration_percent,
+        "timestamp": datetime.utcnow(),
+        "source": "ml_model",
+        "coach_message": get_coach_summary(hydration_percent)
+    }
 
-#     await db.alerts.insert_one(alert)
+    await db.alerts.insert_one(alert)
 
 # async def insert_prediction_based_alert(athlete_id: str, hydration_level: float, source: str = "ml_model"):
 #     status = get_status_label(hydration_level)

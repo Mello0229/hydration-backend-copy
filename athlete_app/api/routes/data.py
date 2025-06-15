@@ -11,7 +11,7 @@ from athlete_app.core.config import db
 from athlete_app.services.predictor import predict_hydration
 from athlete_app.services.preprocess import extract_features_from_row, HYDRATION_LABELS
 from athlete_app.core.model_loader import get_model, get_scaler
-from athlete_app.api.routes.alerts import insert_prediction_alert
+from athlete_app.api.routes.alerts import insert_auto_hydration_alert
 
 router = APIRouter()
 
@@ -235,7 +235,7 @@ async def save_prediction(input_data: dict, user: dict, label: str, combined: fl
         }}
     )
 
-    await insert_prediction_alert(user, label, hydration_percent)
+    await insert_auto_hydration_alert(user, label, hydration_percent)
 
 @router.post("/raw-receive")
 async def raw_receive(data: RawSensorInput, user=Depends(require_athlete)):
