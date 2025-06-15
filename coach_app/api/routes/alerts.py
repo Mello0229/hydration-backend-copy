@@ -63,7 +63,14 @@ router = APIRouter()
 
 #     return alerts
 
-@router.get("/", response_model=List[Alert])
+
+
+# @router.get("/", response_model=List[Alert])
+# async def get_alerts(coach=Depends(get_current_coach)):
+#     coach_email = coach["email"]
+
+#     # ✅ 1. Get coach profile
+#     coach_profile = await db.coach_profile.find_one({"email": coach_email})@router.get("/", response_model=List[Alert])
 async def get_alerts(coach=Depends(get_current_coach)):
     coach_email = coach["email"]
 
@@ -73,28 +80,28 @@ async def get_alerts(coach=Depends(get_current_coach)):
         raise HTTPException(status_code=400, detail="Coach profile missing or incomplete")
     coach_name = coach_profile["name"]
 
-    # ✅ 2. Get athletes under coach
+    # ✅ 2. Get athletes under this coach
     athlete_docs = await db.athletes.find({"assigned_by": coach_email}).to_list(length=None)
-
-    # ✅ FIX: extract athlete emails from athlete_docs
     athlete_emails = [a["email"] for a in athlete_docs]
-
-    print("Coach:", coach_email)
-    print("Athlete emails:", athlete_emails)
-    print("Querying alerts with athlete_id IN:", athlete_emails)
 
     if not athlete_emails:
         return []
 
-    # ✅ 3. Fetch alerts for those athletes
+    # ✅ 3. Convert emails → usernames (to match alert's athlete_id field)
+    user_docs = await db.users.find({"email": {"$in": athlete_emails}}).to_list(length=None)
+    email_to_username = {u["email"]: u["username"] for u in user_docs}
+    username_to_name = {u["username"]: u["name"] for u in user_docs}
+
+    athlete_usernames = list(email_to_username.values())
+
+    print("Coach:", coach_email)
+    print("Athlete USERNAMES for alerts:", athlete_usernames)
+    
+    # ✅ 4. Query alerts by athlete usernames
     cursor = db.alerts.find({
-        "athlete_id": {"$in": athlete_emails},
+        "athlete_id": {"$in": athlete_usernames},
         "status_change": True
     }).sort("timestamp", -1)
-
-    # ✅ ADDED: Fetch names from db.users for mapping username → full name
-    user_docs = await db.users.find({"username": {"$in": athlete_emails}}).to_list(length=None)
-    username_to_name = {u["username"]: u.get("name", u["username"]) for u in user_docs}  # fallback if name missing
 
     alerts = []
     async for doc in cursor:
@@ -112,19 +119,12 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc["status_change"] = doc.get("status_change", False)
 
         athlete_id = doc.get("athlete_id")
-        # ✅ MODIFIED: set athlete_name using username_to_name (from db.users)
         doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
 
         alerts.append(doc)
 
     return alerts
 
-# @router.get("/", response_model=List[Alert])
-# async def get_alerts(coach=Depends(get_current_coach)):
-#     coach_email = coach["email"]
-
-#     # ✅ 1. Get coach profile
-#     coach_profile = await db.coach_profile.find_one({"email": coach_email})
 #     if not coach_profile or "name" not in coach_profile:
 #         raise HTTPException(status_code=400, detail="Coach profile missing or incomplete")
 #     coach_name = coach_profile["name"]
