@@ -24,7 +24,7 @@ async def get_alerts(coach=Depends(get_current_coach)):
     # email_to_name = {a["email"]: a["name"] for a in athlete_docs}
     # athlete_emails = list(email_to_name.keys())
 
-    username_to_name = {a["username"]: a["name"] for a in athlete_docs}
+    username_to_name = {a["name"]: a["name"] for a in athlete_docs}
     athlete_usernames = list(username_to_name.keys())
 
 
