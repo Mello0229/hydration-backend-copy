@@ -121,7 +121,11 @@ async def get_alerts(coach=Depends(get_current_coach)):
         doc["status_change"] = doc.get("status_change", False)
 
         athlete_id = doc.get("athlete_id")
-        doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
+        # doc["athlete_name"] = username_to_name.get(athlete_id, "Unknown")
+        def username_to_pretty(name: str) -> str:
+            return name.replace(".", " ").title() if name else "Unknown"
+
+        doc["athlete_name"] = username_to_name.get(athlete_id, username_to_pretty(athlete_id))
 
         alerts.append(doc)
 
