@@ -24,6 +24,10 @@ async def get_alerts(coach=Depends(get_current_coach)):
     email_to_name = {a["email"]: a["name"] for a in athlete_docs}
     athlete_emails = list(email_to_name.keys())
 
+    print("Coach:", coach_email)
+    print("Athlete emails:", athlete_emails)
+    print("Querying alerts with athlete_id IN:", athlete_emails)
+
     if not athlete_emails:
         return []
 
